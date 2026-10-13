@@ -4,42 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Herbarium</title>
-  <script>
-    // Incolla l'URL 'exec' originale
-    var GAS_URL = "https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec";
-    
-    // Rileva se la navigazione avviene da smartphone/tablet
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      // Su mobile aggiunge authuser=0 al reindirizzamento per scavalcare il blocco multi-account
-      var mobileUrl = GAS_URL + (GAS_URL.indexOf('?') === -1 ? '?authuser=0' : '&authuser=0');
-      window.location.replace(mobileUrl);
-    }
-  </script>
   <style>
     html, body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #EEF3F4;
+      background: #EEF3F4;
     }
     iframe {
+      display: block;
       width: 100%;
       height: 100%;
-      border: none;
-      display: block;
+      border: 0;
     }
   </style>
 </head>
 <body>
-  <script>
-    // Su desktop viene caricato l'iframe con l'URL pulito
-    if (!isMobile) {
-      document.write('<iframe src="' + GAS_URL + '" allow="geolocation; camera"></iframe>');
-    }
-  </script>
+  <iframe
+    src="https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec"
+    title="Herbarium"
+    allow="geolocation; camera">
+  </iframe>
 </body>
 </html>
