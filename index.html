@@ -2,8 +2,18 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Herbarium</title>
+  <script>
+    // URL di Google Apps Script
+    var GAS_URL = "https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec";
+
+    // Se l'utente è da mobile/tablet, reindirizza direttamente all'app a schermo intero
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.replace(GAS_URL);
+    }
+  </script>
   <style>
     html, body {
       margin: 0;
@@ -12,14 +22,8 @@
       height: 100%;
       overflow: hidden;
       background-color: #EEF3F4;
-      -webkit-overflow-scrolling: touch;
     }
     iframe {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
       width: 100%;
       height: 100%;
       border: none;
@@ -28,6 +32,11 @@
   </style>
 </head>
 <body>
-  <iframe src="https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec" allow="geolocation; camera"></iframe>
+  <script>
+    // Se è desktop, crea l'iframe normalmente
+    if (!isMobile) {
+      document.write('<iframe src="' + GAS_URL + '" allow="geolocation; camera"></iframe>');
+    }
+  </script>
 </body>
 </html>
