@@ -2,24 +2,17 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Herbarium</title>
   <script>
     // Incolla qui il tuo URL 'exec' originale di Google Apps Script
     var GAS_URL = "https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec";
-    
-    // Applichiamo il trucco /a/*/ e ?authuser=0 per risolvere il bug di Google con i multi-account
-    var FIXED_URL = ORIGINAL_URL.replace("script.google.com/macros/s/", "script.google.com/a/*/macros/s/");
-    if (FIXED_URL.indexOf("?") === -1) {
-      FIXED_URL += "?authuser=0";
-    } else {
-      FIXED_URL += "&authuser=0";
-    }
-
-    // Se l'utente è da mobile, lo reindirizziamo all'URL corretto a schermo intero
+// Rileva se l'utente naviga da smartphone o tablet
     var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     if (isMobile) {
-      window.location.replace(FIXED_URL);
+      // Su mobile apriamo l'app a schermo intero: questo evita il blocco cookie negli iframe
+      window.location.replace(GAS_URL);
     }
   </script>
   <style>
@@ -32,9 +25,6 @@
       background-color: #EEF3F4;
     }
     iframe {
-      position: fixed;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
       border: none;
@@ -44,9 +34,9 @@
 </head>
 <body>
   <script>
-    // Su desktop carichiamo l'iframe con l'URL corretto
+    // Su desktop carichiamo l'iframe normale
     if (!isMobile) {
-      document.write('<iframe src="' + FIXED_URL + '" allow="geolocation; camera"></iframe>');
+      document.write('<iframe src="' + GAS_URL + '" allow="geolocation; camera"></iframe>');
     }
   </script>
 </body>
