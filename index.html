@@ -273,7 +273,42 @@ if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=docu
   // URL dell'API di Google Apps Script (deployment /exec)
   const API_URL = "https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec";
 
+function fetchJsonp(url, params = {}) {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_cb_' + Math.floor(Math.random() * 1000000);
+      params.callback = callbackName;
+      
+      const queryString = new URLSearchParams(params).toString();
+      const script = document.createElement('script');
+      script.src = url + '?' + queryString;
+
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        if (data && data.error) {
+          reject(new Error(data.error));
+        } else {
+          resolve(data);
+        }
+      };
+
+      script.onerror = function() {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        reject(new Error('Impossibile caricare i dati dal server Google Apps Script.'));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
   async function apiCall(action, params = {}) {
+    // Le letture dei dati usano JSONP per evitare i blocchi CORS del browser
+    if (action === 'getData' || action === 'verifyPin' || action === 'searchPhotos') {
+      return fetchJsonp(API_URL, { action, ...params });
+    }
+
+    // Le scritture (inserimenti/modifiche) usano POST
     const payload = { action, ...params };
     const res = await fetch(API_URL, {
       method: 'POST',
