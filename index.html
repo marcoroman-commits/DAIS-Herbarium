@@ -41,10 +41,9 @@
 html,body{height:100%;margin:0}
 .mono{font-family:var(--mono)}
 #src{font-size:11.5px;color:var(--muted)}
-.basemap-sat{filter:brightness(1.1) contrast(.88)}
 #map.relief-active{background:#DEE8D7}
 .leaflet-control-layers{background:var(--surface)!important;color:var(--ink)!important;border:1px solid var(--rule)!important;box-shadow:0 2px 6px rgba(0,0,0,0.15)!important;font-size:12.5px!important;border-radius:4px!important}
-.leaflet-control-layers-toggle{background-image:none!important;width:auto!important;height:auto!important;padding:6px 12px!important;font-size:12.5px!important;font-weight:600!important;color:var(--ink)!important;text-decoration:none!important;display:flex!important;align-items:center!important;gap:6px!important;white-space:nowrap!important}
+.leaflet-control-layers-toggle{background-image:none!important;width:auto!important;height:auto!important;padding:5px 10px!important;font-size:12.5px!important;font-weight:400!important;color:var(--ink)!important;text-decoration:none!important;display:flex!important;align-items:center!important;white-space:nowrap!important}
 .leaflet-control-layers-toggle::after{content:attr(data-label)}
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;}
@@ -114,7 +113,7 @@ dl.label dt{color:var(--muted)}dl.label dd{margin:0;overflow-wrap:anywhere}
 .leaflet-container{font-family:var(--sans);background:var(--sea)}
 .legend{position:absolute;right:12px;bottom:14px;z-index:500;background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;font-size:12px;display:grid;gap:4px;max-width:220px}
 .legend .i{display:flex;align-items:center;gap:7px}
-.legend .dot{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid #fff}
+.legend .dot{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid var(--rule)}
 .legend .s{color:var(--muted);font-size:11px;margin-top:2px}
 .mapbtns{position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 100px);gap:6px}
 .mapbtns button{background:var(--surface)}
@@ -141,7 +140,6 @@ dl.label dt{color:var(--muted)}dl.label dd{margin:0;overflow-wrap:anywhere}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-/* ---- azioni, foto, inserimento ---- */
 button.primary{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600}
 button.primary:hover{filter:brightness(1.1);color:var(--surface)}
 button:disabled{opacity:.55;cursor:progress}
@@ -263,7 +261,6 @@ if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=docu
 </script>
 <script>
 
-// URL della tua Web App Google Apps Script
 const EDITOR_URL = 'https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec';
 
 const PARAM_NAMES = {
@@ -668,7 +665,6 @@ const STATE={
   "UK":[52.5, -1.5, "Regno Unito"]
 };
 
-// ---------- lingue ----------
 const I18N={
 it:{
   locale:'it-IT', htmlLang:'it', otherLang:'EN', otherLangTitle:'Switch to English',
@@ -840,7 +836,6 @@ function parse(data){
   });
 }
 
-// ---------- controlli ----------
 let YMIN=1900, YMAX=2100;
 function fillSelect(el, values, allLabel){
   const cur=el.value;
@@ -894,10 +889,9 @@ function filtered(){
   });
 }
 
-// ---------- mappa ----------
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 const NE_PTS=[[44.9,10.2],[46.8,13.9]];
-let M=null, lastGroups=[];
+let M=null, lastGroups=[], currentBaseLayer='road';
 const radiusOf=n=>3.5+Math.sqrt(n)*2.0;
 const tipHtml=e=>'<div><b>'+esc(e.place)+'</b><br>'+fmt(e.n)+' '+T('specimens')+' · '+e.species.size+' '+T('species')+(e.ph?' · '+e.ph+' '+T('withPhoto'):'')+'</div>';
 function groupsFrom(list){
@@ -919,10 +913,17 @@ function leafletEngine(){
 
   const TILES={
     road:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:OSM_ATTR}),
-    topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:TOPO_ATTR}),
-    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_SAT_ATTR})
+    topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,subdomains:'abc',attribution:TOPO_ATTR}),
+    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:ESRI_SAT_ATTR})
   };
   TILES.road.addTo(map);
+
+  map.on('baselayerchange', function(e){
+    if (e.layer === TILES.road) currentBaseLayer = 'road';
+    else if (e.layer === TILES.topo) currentBaseLayer = 'topo';
+    else if (e.layer === TILES.sat) currentBaseLayer = 'sat';
+    if (typeof current !== 'undefined' && current) drawPoints(current);
+  });
 
   let layerCtl=null;
   const buildLayers=()=>{
@@ -930,7 +931,7 @@ function leafletEngine(){
     const b={}; b[T('baseRoad')]=TILES.road; b[T('baseTopo')]=TILES.topo; b[T('baseSat')]=TILES.sat;
     layerCtl=L.control.layers(b,null,{position:'topleft'}).addTo(map);
     const toggle = document.querySelector('.leaflet-control-layers-toggle');
-    if(toggle) toggle.setAttribute('data-label', '🗺️ ' + T('layers'));
+    if(toggle) toggle.setAttribute('data-label', T('layers'));
   };
   buildLayers();
   map.attributionControl.setPrefix(false);
@@ -965,12 +966,15 @@ function leafletEngine(){
   return {kind:'leaflet',
     draw(groups){
       layer.clearLayers();
+      const needsWhiteBorder = (currentBaseLayer === 'topo' || currentBaseLayer === 'sat');
       groups.forEach(e=>{
         const isSel=e.key===selected;
+        const strokeColor = isSel ? '#0A3F51' : (needsWhiteBorder ? '#FFFFFF' : '#0A3F51');
+        const strokeWeight = isSel ? 3.5 : (needsWhiteBorder ? 2 : 1.5);
         const m=L.circleMarker([e.lat,e.lon], {
           radius:radiusOf(e.n),
-          color:isSel?'#0A3F51':'#FFFFFF',
-          weight:isSel?3.5:2,
+          color:strokeColor,
+          weight:strokeWeight,
           opacity:1,
           fillColor:css('--'+e.prec),
           fillOpacity:isSel?.9:.8,
@@ -1017,7 +1021,6 @@ if(window.L){ M=leafletEngine(); M.draw(lastGroups); mapFitNE(); }
 else { M={draw(){},fit(){},fly(){},resize(){},relabel(){},pick(){},temp(){},areaMode(){},showArea(){}}; }
 refreshAreaControls();
 
-// ---------- pannello: consultazione ----------
 function photoStrip(r){
   if(!r.photos.length) return '';
   return `<div class="photos">${r.photos.map(p=>`<figure class="ph"><a href="${esc(p.page||p.img)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(p.thumb)}" alt="${esc(r.name)}" referrerpolicy="no-referrer"></a>
@@ -1114,7 +1117,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&areaDrawing)cancelA
 dark.addEventListener&&dark.addEventListener('change',()=>drawPoints(current));
 function toast(msg,kind){ const el=$('#toast'); el.textContent=msg; el.className='toast '+(kind||''); el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true, kind==='err'?9000:4500); }
 
-// ---------- foto ----------
 async function prepPhoto(file){
   let gps=null;
   try{ if(window.exifr){ const g=await exifr.gps(file); if(g&&isFinite(g.latitude)&&isFinite(g.longitude)) gps={lat:g.latitude,lon:g.longitude}; } }catch(e){}
@@ -1193,7 +1195,6 @@ $('#panel').addEventListener('click',async e=>{
   }catch(err){ b.disabled=false; toast(T('opFail')+(err.message||err),'err'); }
 });
 
-// ---------- inserimento campioni ----------
 let formPhotos=[];
 const uniq=key=>[...new Set(recs.map(r=>r[key]).filter(v=>v&&v!=='?'))].sort((a,b)=>String(a).localeCompare(String(b),'it',{numeric:true}));
 const dl=(id,vals)=>`<datalist id="${id}">${vals.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
@@ -1313,7 +1314,6 @@ function closeForm(render=true){ mode='browse'; document.querySelector('aside').
 $('#newRec').onclick=()=>openForm(null);
 let pendingSelectRow=null;
 
-// ---------- caricamento ----------
 function load(){
   if(mode!=='form') $('#panel').innerHTML='<p class="empty">'+T('loading')+'</p>';
   $('#reload').disabled=true;
@@ -1398,7 +1398,7 @@ function setLang(l){
   update(false);
 }
 
-$('#langBtn').onclick=()=>SetLang(LANG==='it'?'en':'it');
+$('#langBtn').onclick=()=>setLang(LANG==='it'?'en':'it');
 $('#reload').onclick=load;
 load();
 
