@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<base target="_top">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Herbarium</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -268,57 +269,6 @@ window.addEventListener('error',function(e){var b=document.getElementById('fatal
 if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('fatal');if(b){b.hidden=false;b.textContent='La libreria della mappa (Leaflet) non si è caricata: controlla la connessione.';}});}
 </script>
 <script>
-
-// URL dell'API di Google Apps Script (deployment /exec)
-const API_URL = "https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec";
-
-// Definizione globale per fetchJsonp
-window.fetchJsonp = function(url, params = {}) {
-  return new Promise((resolve, reject) => {
-    const callbackName = 'jsonp_cb_' + Math.floor(Math.random() * 1000000);
-    params.callback = callbackName;
-    
-    const queryString = new URLSearchParams(params).toString();
-    const script = document.createElement('script');
-    script.src = url + '?' + queryString;
-
-    window[callbackName] = function(data) {
-      delete window[callbackName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      if (data && data.error) {
-        reject(new Error(data.error));
-      } else {
-        resolve(data);
-      }
-    };
-
-    script.onerror = function() {
-      delete window[callbackName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      reject(new Error('Impossibile caricare i dati dal server Google Apps Script.'));
-    };
-
-    document.body.appendChild(script);
-  });
-};
-
-// Definizione globale di apiCall
-window.apiCall = async function(action, params = {}) {
-  if (action === 'getData' || action === 'verifyPin' || action === 'searchPhotos') {
-    return window.fetchJsonp(API_URL, { action, ...params });
-  }
-
-  const payload = { action, ...params };
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('Errore HTTP ' + res.status);
-  const data = await res.json();
-  if (data && data.error) throw new Error(data.error);
-  return data;
-};
 
 (function(){
   let MY_PIN = (function(){ try { return sessionStorage.getItem('herbarium_pin') || ''; } catch(e) { return ''; } })();
@@ -727,14 +677,14 @@ it:{
   needTaxon:'indica genere e specie', needSite:'indica il sito di raccolta oppure la posizione GPS', badCoords:'controlla latitudine e longitudine', toSave:'Per salvare: ',
   photoFailAfterSave:(E,row,m)=>(E?'Modifiche salvate':'Campione salvato')+' alla riga '+row+', ma le foto non sono state caricate ('+m+').'+(E?'':' Non salvarlo di nuovo.')+' Aggiungi le foto dalla sua scheda con "Carica foto".',
   saved:(E,row,n)=>(E?'Modifiche salvate':'Salvato')+' alla riga '+row+(n?' con '+n+' foto':'')+'.', saveFail:'Salvataggio non riuscito: ',
-  outside:"Errore di connessione alle API.",
+  outside:'Questa pagina funziona solo dentro Google Apps Script o dal link dell\'app web (.../exec).',
   loading:'Caricamento dei dati dal foglio…', readAt:'letto alle',
-  signIn:'Accedi per modificare', signInT:'Modalità Editor', rolePub:'Pubblico',
+  signIn:'Accedi per modificare', signInT:'Apri la versione per editor', rolePub:'Pubblico',
   roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio: puoi inserire e modificare campioni', roleROt:'puoi solo consultare i dati',
-  oldCode:"Versione codice non aggiornata.",
-  noAccess:'<b>Non hai accesso a questo erbario.</b><br>Controlla che il foglio Google sia accessibile.',
-  detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere i dati: '+m,
-  fatalLeaflet:'La libreria della mappa (Leaflet) non si è caricata.',
+  oldCode:"Il file Code.gs nell'editor Apps Script è di una versione precedente: sostituiscilo con quello nuovo.",
+  noAccess:'<b>Non hai accesso a questo erbario.</b><br>Per consultarlo chiedi al proprietario di condividerti il foglio Google, poi ricarica la pagina.',
+  detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere il foglio: '+m+'. Ricarica la pagina.',
+  fatalLeaflet:'La libreria della mappa (Leaflet) non si è caricata: controlla la connessione.',
   pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto! Modalità Editing attivata.', pinErr:'PIN errato. Riprova.',
   pinExit:'Modalità pubblica ripristinata.'
 },
@@ -757,13 +707,13 @@ en:{
   remove:'Remove', dateNA:'no date', legUnknown:'collector unknown', linkedPhotos:'Linked photos', photos:'photos', boxShort:'box',
   lFamily:'Family', lSite:'Site', lProvState:'Prov. / Country', lDate:'Date', lLegit:'Collector', lDet:'Identified by', lGeo:'Mapped at',
   lNote:'Notes', lIns:'Added', lMod:'Edited', lRow:'Sheet row',
-  aSearch:'Find photos', aEdit:'Edit', aUpload:'Upload photo', aClone:'New specimen like this',
+  aSearch:'Find photos in databases', aEdit:'Edit', aUpload:'Upload photo', aClone:'New specimen like this',
   allSites:'← All sites', labels:'Label wording', specList:'Specimens', showMore:'Show', showMoreSites:'Show more sites',
   topFam:'Most represented families', siteList:'Collection sites',
   noMatch:'No specimens match the filters.',
-  badImage:'Invalid image format', uploading:(k,n)=>'Uploading photo '+k+' of '+n+'…',
+  badImage:'The browser cannot read this image format', uploading:(k,n)=>'Uploading photo '+k+' of '+n+'…',
   searching:n=>'Searching for <i>'+n+'</i>…',
-  srcDown:'Sources unreachable: ', noSource:'No database answered.',
+  srcDown:'Sources not reachable: ', noSource:'No database answered.',
   noImages:'No images found.',
   found:n=>n+' images found', close:'Close', alreadyLinked:'Already linked', linkIt:'Link to specimen', linking:'Linking…', linked:'Linked',
   extNote:'Images stay on original sites.',
@@ -773,19 +723,19 @@ en:{
   fIntroNew:'Fields marked * are required.',
   fTaxon:'Taxon', fGenus:'Genus *', fSpecies:'Species *', fAuthor:'Author',
   fCollection:'Collection', fSite:'Collection site', fSitePh:'e.g. Valle S. Felicita', fProv:'Province', fState:'Country', fDate:'Date', fDatePh:'dd.mm.yyyy',
-  fGps:'GPS position', fLat:'Latitude', fLon:'Longitude', fAcc:'Accuracy (m)', fGeo:'Use my location', fPick:'Pick on map', fPicking:'Click on map…', fClear:'Clear',
+  fGps:'GPS position', fLat:'Latitude', fLon:'Longitude', fAcc:'Accuracy (m)', fGeo:'Use my location', fPick:'Pick on map', fPicking:'Click on the map…', fClear:'Clear',
   fGpsHint:'Position from photo EXIF if available.',
   fAddPhotos:'Add photos', fPhotos:'Photos', fCam:'Take photo', fGallery:'Choose from gallery', fTake:'Remove',
   fSaveEdit:'Save changes', fSaveNew:'Save specimen', fCancel:'Cancel', fSaving:'Saving…',
   hintPresent:n=>'Already in herbarium: '+n+' specimens.', hintNewSp:'New species.', hintNewGen:'New genus.',
   posSet:s=>'Position set '+s+'.', srcDevice:'from device', srcMap:'from map', srcPhoto:'from photo',
-  noGeo:'Geolocation not available.', locating:'Locating…',
+  noGeo:'Geolocation not available.', locating:'Finding your location…',
   geoFail:denied=>'Location error.',
   gpsCleared:'GPS cleared.', photoNotAdded:'Photo error: ',
   needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ',
   photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
   saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ',
-  outside:'Connection error.',
+  outside:'This page works inside Google Apps Script or from the web app link (.../exec).',
   loading:'Loading data…', readAt:'read at',
   signIn:'Sign in', signInT:'Editor mode', rolePub:'Public',
   roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only',
@@ -793,7 +743,7 @@ en:{
   noAccess:'<b>No access.</b>',
   detail:'Details: ', readFail:m=>'Cannot read: '+m,
   fatalLeaflet:'Map library failed.',
-  pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'PIN correct!', pinErr:'Incorrect PIN.',
+  pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN!', pinErr:'Incorrect PIN.',
   pinExit:'Public mode.'
 }};
 let LANG=(function(){ try{ const s=localStorage.getItem('erbario.lang'); if(s==='it'||s==='en') return s; }catch(e){} return /^it/i.test(navigator.language||'it')?'it':'en'; })();
@@ -818,6 +768,7 @@ const PL = p=>T(PREC_KEY[p]);
 const PN = p=>T('precNote')[p];
 let LAST_DATA=null;
 const GAZ_RX = GAZ.map(([p,la,lo,n])=>[new RegExp(p,'i'),la,lo,n]);
+const run = (fn,...args)=>new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
 let USER='', CAN_EDIT=false;
 
 // ---------- parsing del foglio ----------
@@ -893,7 +844,7 @@ function setupControls(){
   fillSelect($('#leg'),[...counts('leg')].sort((a,b)=>b[1]-a[1]),T('all_m'));
   fillSelect($('#box'),[...counts('box')].sort((a,b)=>(+a[0]||0)-(+b[0]||0)),T('all_f'));
   const years=recs.map(r=>r.year).filter(Boolean);
-  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0 || +$('#y1').value!==y1;
+  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0||+$('#y1').value!==y1;
   YMIN=years.length?Math.min(...years):1900; YMAX=years.length?Math.max(...years):2100;
   if(!keep||!$('#y0').value){ $('#y0').value=YMIN; $('#y1').value=YMAX; }
   $('#y0').min=$('#y1').min=YMIN; $('#y0').max=$('#y1').max=YMAX;
@@ -917,7 +868,7 @@ function finishAreaSelection(bounds){
 function filtered(){
   const terms=norm($('#q').value.trim()).split(/\s+/).filter(Boolean);
   const fam=$('#fam').value, leg=$('#leg').value, box=$('#box').value;
-  const y0=+$('#y0').value || YMIN, y1=+$('#y1').value || YMAX;
+  const y0=+$('#y0').value||YMIN, y1=+$('#y1').value||YMAX;
   const yF=y0>YMIN||y1<YMAX;
   const pOk={gps:$('#p-gps').checked,loc:$('#p-loc').checked,prov:$('#p-prov').checked,stato:$('#p-stato').checked};
   const onlyPh=$('#p-photo').checked;
@@ -935,6 +886,7 @@ function filtered(){
 }
 
 // ---------- mappa ----------
+const dark = window.matchMedia('(prefers-color-scheme: dark)');
 const NE_PTS=[[44.9,10.2],[46.8,13.9]];
 let M=null, lastGroups=[];
 const radiusOf=n=>3.2+Math.sqrt(n)*1.9;
@@ -947,6 +899,7 @@ function groupsFrom(list){
 function drawPoints(list){ lastGroups=groupsFrom(list); if(M) M.draw(lastGroups); }
 function mapFit(pts,maxZoom){ if(M&&pts.length) M.fit(pts,maxZoom); }
 function mapFitNE(){ mapFit(NE_PTS); }
+function mapFly(lat,lon,z){ if(M) M.fly(lat,lon,z); }
 
 function leafletEngine(){
   const map=L.map('map',{preferCanvas:true,minZoom:3,maxZoom:19});
@@ -971,10 +924,12 @@ function leafletEngine(){
   buildLayers();
   map.attributionControl.setPrefix(false);
   const layer=L.layerGroup().addTo(map);
-  let pickCb=null, areaRect=null;
+  let pickCb=null, temp=null, areaRect=null;
 
-  return {
-    kind:'leaflet',
+  window.addEventListener('resize', ()=>{ map.invalidateSize(); });
+  window.addEventListener('orientationchange', ()=>{ setTimeout(() => map.invalidateSize(), 300); });
+
+  return {kind:'leaflet',
     draw(groups){
       layer.clearLayers();
       groups.forEach(e=>{
@@ -997,183 +952,411 @@ function leafletEngine(){
     resize(){ map.invalidateSize(); },
     relabel(){ buildLayers(); },
     pick(cb){ pickCb=cb; map.getContainer().classList.toggle('picking',!!cb); },
-    areaMode(on){
-      map.getContainer().classList.toggle('area-drawing',on);
-    },
+    areaMode(on){ map.getContainer().classList.toggle('area-drawing',on); },
     showArea(bounds){
-      if(areaRect) areaRect.remove();
-      areaRect = L.rectangle(bounds, {color:css('--accent'), weight:2, fillOpacity:0.1, interactive:false}).addTo(map);
+      if(areaRect){areaRect.remove();areaRect=null}
+      if(bounds)areaRect=L.rectangle(bounds,{color:css('--accent'),weight:2,fillOpacity:.09,interactive:false}).addTo(map);
     },
-    clearArea(){
-      if(areaRect){ areaRect.remove(); areaRect=null; }
+    temp(lat,lon){
+      if(temp){temp.remove();temp=null}
+      if(lat==null) return;
+      temp=L.circleMarker([lat,lon],{radius:9,color:css('--gps'),weight:3,dashArray:'3 3',fillColor:css('--gps'),fillOpacity:.25,interactive:false}).addTo(map);
     }
   };
 }
+if(window.L){ M=leafletEngine(); M.draw(lastGroups); mapFitNE(); }
+else { M={draw(){},fit(){},fly(){},resize(){},relabel(){},pick(){},temp(){},areaMode(){},showArea(){}}; }
+refreshAreaControls();
 
-function selectPlace(key){
-  selected = selected === key ? null : key;
-  openRow = null;
-  listLimit = 200;
+// ---------- pannello: consultazione ----------
+function photoStrip(r){
+  if(!r.photos.length) return '';
+  return `<div class="photos">${r.photos.map(p=>`<figure class="ph"><a href="${esc(p.page||p.img)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(p.thumb)}" alt="${esc(r.name)}" referrerpolicy="no-referrer"></a>
+    <figcaption>${esc(p.credit)}${CAN_EDIT?` <button type="button" class="linkbtn" data-act="unlink" data-row="${r.row}" data-img="${esc(p.img)}">${T('remove')}</button>`:''}</figcaption></figure>`).join('')}</div>`;
+}
+function specRow(r){
+  const meta=[r.fam,r.date||T('dateNA'),r.leg&&r.leg!=='?'?'leg. '+r.leg:T('legUnknown')].map(esc).join(' · ');
+  const phBadge=r.photos.length?`<span class="phn" title="${T('linkedPhotos')}">${r.photos.length} ${T('photos')}</span>`:'';
+    return `<details class="sp" data-row="${r.row}"${openRow===r.row?' open':''}><summary><span class="bn">${esc(r.name)}${r.aut?`<small>${esc(r.aut)}</small>`:''}</span><span class="box" title="ID">ID ${esc(r.id||'–')}</span><span class="meta">${meta} ${phBadge}</span></summary>
+  ${photoStrip(r)}
+  <dl class="label">
+    <dt>${T('lFamily')}</dt><dd>${esc(r.fam)}</dd>
+    <dt>${T('lSite')}</dt><dd>${esc(r.site)||'—'}</dd>
+    <dt>${T('lProvState')}</dt><dd>${esc(r.prov||'—')} / ${esc(r.st||'—')}</dd>
+    ${r.prec==='gps'?`<dt>GPS</dt><dd class="mono">${r.gpsLat.toFixed(5)}, ${r.gpsLon.toFixed(5)}${r.gpsAcc?` ± ${fmt(r.gpsAcc)} m`:''}</dd>`:''}
+    <dt>${T('lDate')}</dt><dd>${esc(r.date)||'—'}</dd>
+    <dt>${T('lLegit')}</dt><dd>${esc(r.leg)||'—'}</dd>
+    <dt>${T('lDet')}</dt><dd>${esc(r.det)||'—'}</dd>
+    <dt>${T('lGeo')}</dt><dd>${esc(r.place)} <span class="prec ${r.prec}">${PL(r.prec)}</span></dd>
+    ${r.note?`<dt>${T('lNote')}</dt><dd>${esc(r.note)}</dd>`:''}
+    ${r.insBy?`<dt>${T('lIns')}</dt><dd>${esc(r.insBy)}${r.insAt?', '+esc(r.insAt):''}</dd>`:''}
+    ${r.modBy?`<dt>${T('lMod')}</dt><dd>${esc(r.modBy)}${r.modAt?', '+esc(r.modAt):''}</dd>`:''}
+    <dt>${T('lRow')}</dt><dd class="mono">${r.row}</dd>
+  </dl>
+  <div class="sp-actions">
+    <button type="button" data-act="search" data-row="${r.row}">${T('aSearch')}</button>
+    ${CAN_EDIT?`<button type="button" data-act="edit" data-row="${r.row}">${T('aEdit')}</button>
+    <button type="button" data-act="upload" data-row="${r.row}">${T('aUpload')}</button>
+    <button type="button" data-act="clone" data-row="${r.row}">${T('aClone')}</button>`:''}
+  </div>
+  <div class="psearch" id="ps-${r.row}" hidden></div>
+  </details>`;
+}
+function renderPanel(list){
+  $('#counts').innerHTML=`<span><b>${fmt(list.length)}</b> / ${fmt(recs.length)} ${T('specimens')}</span><span><b>${fmt(new Set(list.map(r=>r.name)).size)}</b> ${T('species')}</span><span><b>${fmt(lastGroups.length)}</b> ${T('sites')}</span>`;
+  if(mode==='form') return;
+  const p=$('#panel');
+  if(selected){
+    const here=list.filter(r=>r.key===selected);
+    const g=lastGroups.find(x=>x.key===selected);
+    if(!here.length){selected=null;return renderPanel(list);}
+    here.sort((a,b)=>a.fam.localeCompare(b.fam)||a.name.localeCompare(b.name)||(a.iso||'').localeCompare(b.iso||''));
+    const sites=[...new Set(here.map(r=>r.site))];
+    p.innerHTML=`<button type="button" class="back" id="back">${T('allSites')}</button>
+      <div><h2>${esc(g.place)}</h2>
+      <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="prec ${g.prec}">${PL(g.prec)}</span><span class="note">${fmt(here.length)} ${T('specimens')} · ${new Set(here.map(r=>r.name)).size} ${T('species')}</span></div>
+      <p class="note" style="margin:8px 0 0">${PN(g.prec)} ${g.lat.toFixed(g.prec==='gps'?5:3)}° N, ${g.lon.toFixed(g.prec==='gps'?5:3)}° E</p></div>
+      <div><h3>${T('labels')} (${sites.length})</h3><div class="note">${sites.slice(0,12).map(esc).join(' · ')}${sites.length>12?' …':''}</div></div>
+      <div><h3>${T('specList')}</h3><div class="specs">${here.slice(0,listLimit).map(specRow).join('')}</div></div>
+      ${here.length>listLimit?`<button type="button" class="more" id="more">${T('showMore')} ${fmt(Math.min(200,here.length-listLimit))}</button>`:''}`;
+    $('#back').onclick=()=>{selected=null;openRow=null;update(false)};
+  } else {
+    const fam=new Map(); list.forEach(r=>fam.set(r.fam,(fam.get(r.fam)||0)+1));
+    const topF=[...fam].sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const maxF=topF.length?topF[0][1]:1;
+    p.innerHTML=list.length?`
+      <div><h3>${T('topFam')}</h3><div class="bars">${topF.map(([f,n])=>`<button type="button" class="bar" data-fam="${esc(f)}"><span class="t" style="--w:${(n/maxF*100).toFixed(1)}%"><span>${esc(f)}</span></span><span class="n">${fmt(n)}</span></button>`).join('')}</div></div>
+      <div><h3>${T('siteList')} (${fmt(lastGroups.length)})</h3><div class="places">${lastGroups.slice(0,listLimit).map(g=>`<button type="button" class="place" data-key="${g.key}"><span class="dot" style="background:var(--${g.prec})"></span><span>${esc(g.place)}</span><span class="n">${fmt(g.n)}</span></button>`).join('')}</div></div>
+      ${lastGroups.length>listLimit?`<button type="button" class="more" id="more">${T('showMoreSites')}</button>`:''}`
+      :'<p class="empty">'+T('noMatch')+'</p>';
+    p.querySelectorAll('.bar').forEach(b=>b.onclick=()=>{$('#fam').value=b.dataset.fam;update(true)});
+    p.querySelectorAll('.place').forEach(b=>b.onclick=()=>selectPlace(b.dataset.key,true));
+  }
+  const more=$('#more'); if(more) more.onclick=()=>{listLimit+=200;renderPanel(list)};
+}
+function selectPlace(key,fly){
+  if(mode==='form') return;
+  selected=key; listLimit=200; openRow=null; update(false);
+  if(fly){const g=lastGroups.find(x=>x.key===key); if(g) mapFly(g.lat,g.lon,10);}
+  $('#panel').scrollTop=0;
+}
+let current=[];
+function update(fit){
+  current=filtered(); drawPoints(current); renderPanel(current);
+  if(fit&&lastGroups.length) mapFit(lastGroups.map(g=>[g.lat,g.lon]),11);
+}
+let t; const deb=f=>{clearTimeout(t);t=setTimeout(f,160)};
+$('#q').addEventListener('input',()=>deb(()=>{selected=null;listLimit=200;update(false)}));
+['#fam','#leg','#box','#y0','#y1','#p-gps','#p-loc','#p-prov','#p-stato','#p-photo'].forEach(s=>$(s).addEventListener('change',()=>{selected=null;listLimit=200;update(['#fam','#leg','#box'].includes(s))}));
+$('#filters').addEventListener('submit',e=>e.preventDefault());
+$('#reset').onclick=()=>{$('#q').value='';$('#fam').value='';$('#leg').value='';$('#box').value='';$('#y0').value=YMIN;$('#y1').value=YMAX;['#p-gps','#p-loc','#p-prov','#p-stato'].forEach(s=>$(s).checked=true);$('#p-photo').checked=false;cancelAreaSelection();areaBounds=null;M.showArea(null);refreshAreaControls();selected=null;listLimit=200;update(false);mapFitNE()};
+$('#fitAll').onclick=()=>mapFit(lastGroups.map(g=>[g.lat,g.lon]));
+$('#fitVen').onclick=mapFitNE;
+$('#areaSelect').onclick=()=>{
+  if(areaDrawing){cancelAreaSelection();return}
+  if(mode==='form'||!window.L)return;
+  areaDrawing=true; M.areaMode(true); refreshAreaControls(); toast(T('areaHint'));
+};
+$('#areaClear').onclick=()=>{
+  cancelAreaSelection(); areaBounds=null; M.showArea(null); refreshAreaControls();
+  selected=null; openRow=null; listLimit=200; update(false);
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&areaDrawing)cancelAreaSelection()});
+dark.addEventListener&&dark.addEventListener('change',()=>drawPoints(current));
+function toast(msg,kind){ const el=$('#toast'); el.textContent=msg; el.className='toast '+(kind||''); el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true, kind==='err'?9000:4500); }
+
+// ---------- foto ----------
+async function prepPhoto(file){
+  let gps=null;
+  try{ if(window.exifr){ const g=await exifr.gps(file); if(g&&isFinite(g.latitude)&&isFinite(g.longitude)) gps={lat:g.latitude,lon:g.longitude}; } }catch(e){}
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(T('badImage')));i.src=url;});
+    const max=2000; const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement('canvas'); c.width=Math.round(img.naturalWidth*s); c.height=Math.round(img.naturalHeight*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const data=c.toDataURL('image/jpeg',.85);
+    return {name:(file.name||'foto').replace(/\.[^.]+$/,'')+'.jpg', b64:data.split(',')[1], preview:data, gps};
+  } finally { URL.revokeObjectURL(url); }
+}
+function pickFiles(capture){
+  return new Promise(res=>{
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=!capture;
+    if(capture) inp.setAttribute('capture','environment');
+    inp.onchange=()=>res([...inp.files]); inp.click();
+  });
+}
+async function uploadTo(rec, files){
+  let ok=0;
+  for(const [k,f] of files.entries()){
+    toast(T('uploading',k+1,files.length));
+    const p = f.b64 ? f : await prepPhoto(f);
+    const r = await run('uploadPhoto', rec.row, rec.name, p.b64, 'image/jpeg', p.name, MY_PIN);
+    rec.photos.push(...parsePhotos(`${r.url} | ${r.credit} | ${r.url}`)); ok++;
+  }
+  return ok;
+}
+async function doSearch(rec){
+  const box=$('#ps-'+rec.row); if(!box) return;
+  box.hidden=false; box.innerHTML='<p class="note">'+T('searching',esc(rec.name))+'</p>';
+  try{
+    const raw=await run('searchPhotos', rec.name);
+    const res=Array.isArray(raw)?raw:(raw&&raw.items)||[];
+    const srcErr=(raw&&raw.errors)||[];
+    const errHtml=srcErr.length?'<p class="note">'+T('srcDown')+srcErr.map(esc).join('; ')+'</p>':'';
+    if(!res.length){ box.innerHTML='<p class="note">'+(srcErr.length===3?T('noSource'):T('noImages'))+'</p>'+errHtml; return; }
+    const linked=new Set(rec.photos.map(p=>p.img));
+    box.innerHTML=`<div class="psh"><span class="lbl">${T('found',res.length)}</span><button type="button" class="linkbtn" data-act="closesearch" data-row="${rec.row}">${T('close')}</button></div>
+      <div class="pgrid">${res.map((p,i)=>`<figure class="pc"><a href="${esc(p.page)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(p.thumb)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('figure').classList.add('broken')"></a>
+      <figcaption><b>${esc(p.source)}</b>${p.taxon&&norm(p.taxon)!==norm(rec.name)?` · <i>${esc(p.taxon)}</i>`:''}<br><span>${esc(p.credit.replace(/^[^·]+·\s*/,''))}</span></figcaption>${CAN_EDIT?(linked.has(p.image)?'<span class="note">'+T('alreadyLinked')+'</span>':`<button type="button" data-act="link" data-row="${rec.row}" data-i="${i}">${T('linkIt')}</button>`):''}</figure>`).join('')}</div>
+      ${errHtml}<p class="note">${T('extNote')}</p>`;
+    box._results=res;
+  }catch(err){ box.innerHTML='<p class="note">'+T('searchFail')+esc(err.message||err)+'</p>'; }
+}
+$('#panel').addEventListener('toggle',e=>{ const d=e.target; if(d.matches&&d.matches('details.sp')) openRow=d.open?+d.dataset.row:(openRow===+d.dataset.row?null:openRow); },true);
+$('#panel').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-act]'); if(!b||mode==='form') return;
+  const rec=recs.find(r=>r.row===+b.dataset.row); if(!rec) return;
+  const act=b.dataset.act; openRow=rec.row;
+  try{
+    if(act==='search'){ doSearch(rec); }
+    else if(act==='closesearch'){ const x=$('#ps-'+rec.row); x.hidden=true; x.innerHTML=''; }
+    else if(act==='upload'){
+      const files=await pickFiles(false); if(!files.length) return;
+      b.disabled=true; const n=await uploadTo(rec,files); toast(T('photosLinked',n,rec.name),'ok'); update(false);
+    }
+    else if(act==='link'){
+      const p=$('#ps-'+rec.row)._results[+b.dataset.i]; b.disabled=true; b.textContent=T('linking');
+      await run('linkPhoto', rec.row, rec.name, p.image, p.credit, p.page, MY_PIN);
+      rec.photos.push(...parsePhotos(`${p.image} | ${p.credit} | ${p.page}`));
+      b.replaceWith(Object.assign(document.createElement('span'),{className:'note',textContent:T('linked')}));
+      const strip=document.querySelector(`details.sp[data-row="${rec.row}"] .photos`);
+      const tmp=document.createElement('div'); tmp.innerHTML=photoStrip(rec);
+      if(strip) strip.replaceWith(tmp.firstElementChild); else document.querySelector(`details.sp[data-row="${rec.row}"] summary`).after(tmp.firstElementChild);
+      drawPoints(current);
+    }
+    else if(act==='unlink'){
+      b.disabled=true; await run('unlinkPhoto', rec.row, rec.name, b.dataset.img, MY_PIN);
+      rec.photos=rec.photos.filter(p=>p.img!==b.dataset.img); update(false); toast(T('photoUnlinked'),'ok');
+    }
+    else if(act==='clone'){ openForm(rec,false); }
+    else if(act==='edit'){ openForm(rec,true); }
+  }catch(err){ b.disabled=false; toast(T('opFail')+(err.message||err),'err'); }
+});
+
+// ---------- inserimento campioni ----------
+let formPhotos=[];
+const uniq=key=>[...new Set(recs.map(r=>r[key]).filter(v=>v&&v!=='?'))].sort((a,b)=>String(a).localeCompare(String(b),'it',{numeric:true}));
+const dl=(id,vals)=>`<datalist id="${id}">${vals.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
+function openForm(from, isEdit){
+  cancelAreaSelection();
+  mode='form'; selected=null; document.querySelector('aside').classList.add('formmode');
+  refreshAreaControls();
+  const f=from||{}, E=!!(isEdit&&from);
+  const d0=new Date(), today=String(d0.getDate()).padStart(2,'0')+'.'+String(d0.getMonth()+1).padStart(2,'0')+'.'+d0.getFullYear();
+  const title=E?T('fEdit'):(from?T('fCloneOf',esc(from.name)):T('fNew'));
+  const intro=E?T('fIntroEdit',f.row):T('fIntroNew');
+  $('#panel').innerHTML=`<form id="recForm" class="rform" autocomplete="off" novalidate>
+    <div class="fh"><h2>${title}</h2>
+    <p class="note">${intro}</p></div>
+    <fieldset><legend>${T('fTaxon')}</legend>
+      <div class="row2"><div class="field"><label for="f-gen">${T('fGenus')}</label><input id="f-gen" list="dl-gen" required value="${esc(f.gen||'')}"></div>
+      <div class="field"><label for="f-sp">${T('fSpecies')}</label><input id="f-sp" list="dl-sp" required value="${esc((f.sp||'').toLowerCase())}"></div></div>
+      <div class="row2"><div class="field"><label for="f-fam">${T('family')}</label><input id="f-fam" list="dl-fam" value="${esc(f.fam||'')}"></div>
+      <div class="field"><label for="f-aut">${T('fAuthor')}</label><input id="f-aut" value="${esc(f.aut||'')}"></div></div>
+      <p class="note" id="f-taxhint"></p>
+    </fieldset>
+    <fieldset><legend>${T('fCollection')}</legend>
+      <div class="field"><label for="f-site">${T('fSite')}</label><input id="f-site" list="dl-site" value="${esc(f.site||'')}" placeholder="${T('fSitePh')}"></div>
+      <div class="row3"><div class="field"><label for="f-prov">${T('fProv')}</label><input id="f-prov" list="dl-prov" maxlength="3" value="${esc(f.prov||'')}"></div>
+      <div class="field"><label for="f-st">${T('fState')}</label><input id="f-st" list="dl-st" maxlength="3" value="${esc(f.st||'IT')}"></div>
+      <div class="field"><label for="f-date">${T('fDate')}</label><input id="f-date" placeholder="${T('fDatePh')}" value="${esc(E?f.date:today)}"></div></div>
+      <div class="row3"><div class="field"><label for="f-leg">${T('lLegit')}</label><input id="f-leg" list="dl-leg" value="${esc(f.leg||'')}"></div>
+      <div class="field"><label for="f-det">${T('lDet')}</label><input id="f-det" list="dl-det" value="${esc(f.det||'')}"></div>
+      <div class="field"><label for="f-box">${T('box')}</label><input id="f-box" list="dl-box" value="${esc(f.box||'')}"></div></div>
+      <div class="field"><label for="f-note">${T('lNote')}</label><textarea id="f-note" rows="2">${esc(E?f.note:'')}</textarea></div>
+    </fieldset>
+    <fieldset><legend>${T('fGps')}</legend>
+      <div class="row3"><div class="field"><label for="f-lat">${T('fLat')}</label><input id="f-lat" inputmode="decimal" placeholder="45.43812" value="${E&&f.gpsLat!=null?f.gpsLat:''}"></div>
+      <div class="field"><label for="f-lon">${T('fLon')}</label><input id="f-lon" inputmode="decimal" placeholder="12.33591" value="${E&&f.gpsLon!=null?f.gpsLon:''}"></div>
+      <div class="field"><label for="f-acc">${T('fAcc')}</label><input id="f-acc" inputmode="numeric" value="${E&&f.gpsAcc!=null?f.gpsAcc:''}"></div></div>
+      <div class="actions"><button type="button" id="f-geo">${T('fGeo')}</button><button type="button" id="f-pick">${T('fPick')}</button><button type="button" id="f-clr" class="linkbtn">${T('fClear')}</button></div>
+      <p class="note" id="f-gpsmsg">${T('fGpsHint')}</p>
+    </fieldset>
+    <fieldset><legend>${E?T('fAddPhotos'):T('fPhotos')}</legend>
+      <div class="actions"><button type="button" id="f-cam">${T('fCam')}</button><button type="button" id="f-files">${T('fGallery')}</button></div>
+      <div class="fthumbs" id="f-thumbs"></div>
+    </fieldset>
+    <p class="err" id="f-err" hidden></p>
+    <div class="actions sticky"><button type="submit" class="primary" id="f-save">${E?T('fSaveEdit'):T('fSaveNew')}</button><button type="button" id="f-cancel">${T('fCancel')}</button></div>
+    ${dl('dl-gen',uniq('gen'))}${dl('dl-sp',[])}${dl('dl-fam',uniq('fam'))}${dl('dl-site',uniq('site'))}${dl('dl-prov',uniq('prov'))}${dl('dl-st',uniq('st'))}${dl('dl-leg',uniq('leg'))}${dl('dl-det',uniq('det'))}${dl('dl-box',uniq('box'))}
+  </form>`;
+  $('#panel').scrollTop=0;
+  formPhotos=[];
+  const gen=$('#f-gen'), sp=$('#f-sp');
+  const fillSp=()=>{ const g=norm(gen.value); $('#dl-sp').innerHTML=uniq('sp').length?[...new Set(recs.filter(r=>norm(r.gen)===g).map(r=>r.sp.toLowerCase()))].sort().map(v=>`<option value="${esc(v)}">`).join(''):''; };
+  const taxHint=()=>{
+    const g=norm(gen.value), s=norm(sp.value);
+    const same=recs.filter(r=>norm(r.gen)===g&&norm(r.sp)===s);
+    const sameG=recs.find(r=>norm(r.gen)===g);
+    if(same.length){ if(!$('#f-fam').value) $('#f-fam').value=same[0].fam; if(!$('#f-aut').value) $('#f-aut').value=same[0].aut;
+      $('#f-taxhint').textContent=T('hintPresent',same.length); }
+    else if(sameG){ if(!$('#f-fam').value) $('#f-fam').value=sameG.fam; $('#f-taxhint').textContent=g&&s?T('hintNewSp'):''; }
+    else $('#f-taxhint').textContent=g&&s?T('hintNewGen'):'';
+  };
+  gen.addEventListener('change',()=>{fillSp();taxHint()}); sp.addEventListener('change',taxHint); fillSp(); if(from&&!E) taxHint();
+  if(E&&f.gpsLat!=null&&f.gpsLon!=null){ M.temp(f.gpsLat,f.gpsLon); }
+  const setPos=(lat,lon,acc,src)=>{ $('#f-lat').value=lat.toFixed(6); $('#f-lon').value=lon.toFixed(6); $('#f-acc').value=acc!=null?Math.round(acc):''; M.temp(lat,lon); mapFly(lat,lon,13); $('#f-gpsmsg').textContent=T('posSet',src); };
+  const posChanged=()=>{ const la=num($('#f-lat').value), lo=num($('#f-lon').value); if(la!=null&&lo!=null) M.temp(la,lo); };
+  $('#f-lat').addEventListener('change',posChanged); $('#f-lon').addEventListener('change',posChanged);
+  $('#f-geo').onclick=()=>{
+    if(!navigator.geolocation){ $('#f-gpsmsg').textContent=T('noGeo'); return; }
+    $('#f-gpsmsg').textContent=T('locating');
+    navigator.geolocation.getCurrentPosition(p=>setPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,T('srcDevice')),
+      err=>{ $('#f-gpsmsg').textContent=T('geoFail',err.code===1); },
+      {enableHighAccuracy:true,timeout:20000,maximumAge:0});
+  };
+  $('#f-pick').onclick=()=>{
+    const on=!$('#f-pick').classList.contains('on');
+    $('#f-pick').classList.toggle('on',on); $('#f-pick').textContent=on?T('fPicking'):T('fPick');
+    M.pick(on?(la,lo)=>{ setPos(la,lo,null,T('srcMap')); $('#f-pick').classList.remove('on'); $('#f-pick').textContent=T('fPick'); M.pick(null); }:null);
+  };
+  $('#f-clr').onclick=()=>{ ['#f-lat','#f-lon','#f-acc'].forEach(s=>$(s).value=''); M.temp(null);$('#f-gpsmsg').textContent=T('gpsCleared'); };
+  const addFiles=async files=>{
+    for(const file of files){
+      try{
+        const p=await prepPhoto(file); formPhotos.push(p);
+        if(p.gps && !$('#f-lat').value) setPos(p.gps.lat,p.gps.lon,null,T('srcPhoto'));
+      }catch(err){ toast(T('photoNotAdded')+err.message,'err'); }
+    }
+    renderThumbs();
+  };
+  const renderThumbs=()=>{ $('#f-thumbs').innerHTML=formPhotos.map((p,i)=>`<figure><img src="${p.preview}" alt="${T('fPhotos')} ${i+1}"><button type="button" class="linkbtn" data-rm="${i}">${T('fTake')}</button>${p.gps?'<span class="note">GPS</span>':''}</figure>`).join('');
+    $('#f-thumbs').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{formPhotos.splice(+b.dataset.rm,1);renderThumbs()}); };
+  $('#f-cam').onclick=async()=>addFiles(await pickFiles(true));
+  $('#f-files').onclick=async()=>addFiles(await pickFiles(false));
+  $('#f-cancel').onclick=closeForm;
+  $('#recForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const v=id=>$(id).value.trim();
+    const err=$('#f-err'); err.hidden=true;
+    const la=num(v('#f-lat')), lo=num(v('#f-lon'));
+    const problems=[];
+    if(!v('#f-gen')||!v('#f-sp')) problems.push(T('needTaxon'));
+    if(!v('#f-site')&&(la==null||lo==null)) problems.push(T('needSite'));
+    if((la!=null)!==(lo!=null)||(la!=null&&(Math.abs(la)>90||Math.abs(lo)>180))) problems.push(T('badCoords'));
+    if(problems.length){ err.textContent=T('toSave')+problems.join('; ')+'.'; err.hidden=false; return; }
+    const date=v('#f-date').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3.$2.$1');
+    const rec={gen:v('#f-gen'),sp:v('#f-sp'),fam:v('#f-fam'),aut:v('#f-aut'),site:v('#f-site'),prov:v('#f-prov'),st:v('#f-st')||'IT',date,
+      leg:v('#f-leg'),det:v('#f-det'),box:v('#f-box'),note:v('#f-note'),gpsLat:la,gpsLon:lo,gpsAcc:num(v('#f-acc'))};
+    const save=$('#f-save'); save.disabled=true; save.textContent=T('fSaving');
+    try{
+      const res = E ? await run('updateRecord', f.row, f.name, rec, MY_PIN) : await run('addRecord', rec, MY_PIN);
+      let nph=0, phErr=null;
+      if(formPhotos.length){ try{ nph=await uploadTo({row:res.row,name:res.name,photos:[]},formPhotos); }catch(pe){ phErr=pe; } }
+      if(phErr) toast(T('photoFailAfterSave',E,res.row,String(phErr.message||phErr).slice(0,160)),'err');
+      else toast(T('saved',E,res.row,nph),'ok');
+      closeForm(false); pendingSelectRow=res.row; load();
+    }catch(ex){ err.textContent=T('saveFail')+(ex.message||ex); err.hidden=false; save.disabled=false; save.textContent=E?T('fSaveEdit'):T('fSaveNew'); }
+  });
+}
+function closeForm(render=true){ mode='browse'; document.querySelector('aside').classList.remove('formmode'); M.pick(null); M.temp(null); refreshAreaControls(); if(render) update(false); }
+$('#newRec').onclick=()=>openForm(null);
+let pendingSelectRow=null;
+
+// ---------- caricamento ----------
+function load(){
+  if(typeof google==='undefined'||!google.script){
+    $('#panel').innerHTML='<p class="empty">'+T('outside')+'</p>';
+    return;
+  }
+  if(mode!=='form') $('#panel').innerHTML='<p class="empty">'+T('loading')+'</p>';
+  $('#reload').disabled=true;
+  google.script.run
+    .withSuccessHandler(data=>{
+      LAST_DATA=data; USER=data.user||''; CAN_EDIT=!!data.canEdit;
+      $('#boxFilter').hidden=!!data.publicView;
+      $('#collectionFilters').style.gridTemplateColumns=data.publicView?'1fr':'';
+      if(data.publicView)$('#box').value='';
+      $('#newRec').hidden=!CAN_EDIT;
+      parse(data); setupControls();
+      if(pendingSelectRow){
+        const r=recs.find(x=>x.row===pendingSelectRow); pendingSelectRow=null;
+        if(r){ selected=r.key; openRow=r.row; update(false); mapFly(r.lat,r.lon,r.prec==='gps'?13:10); }
+        else update(false);
+      } else { selected=null; update(false); }
+      renderStatus();
+      if(!CAN_EDIT && mode==='form') closeForm();
+      $('#reload').disabled=false;
+      setTimeout(()=>{if(M)M.resize();if(!window.__fitted){mapFitNE();window.__fitted=true}},50);
+    })
+    .withFailureHandler(err=>{
+      const msg=String(err&&err.message||err);
+      const denied=/permission|autorizzazion|permess|access|accesso|not found|non trovato/i.test(msg);
+      $('#panel').innerHTML=denied
+        ? '<p class="empty">'+T('noAccess')+'</p><p class="note">'+T('detail')+esc(msg)+'</p>'
+        : '<p class="empty">'+T('readFail',esc(msg))+'</p>';
+      $('#role').hidden=true; $('#newRec').hidden=true;
+      $('#reload').disabled=false;
+    })
+    .getData(LANG, MY_PIN);
+}
+function renderStatus(){
+  const data=LAST_DATA; if(!data) return;
+  $('#src').textContent=data.spreadsheetName+' › '+data.sheetName+' · '+T('readAt')+' '+new Date(data.updated).toLocaleTimeString(T('locale'),{hour:'2-digit',minute:'2-digit'});
+  const role=$('#role'); role.hidden=false; role.className='role '+(CAN_EDIT?'rw':'ro');
+  role.textContent=CAN_EDIT?T('roleRW'):T('roleRO');
+
+  const pb=$('#pinBtn');
+  if(pb){
+    pb.textContent = CAN_EDIT ? T('pinActive') : T('pinBtn');
+    pb.style.background = CAN_EDIT ? 'var(--loc)' : '';
+    pb.style.color = CAN_EDIT ? '#fff' : '';
+    pb.onclick = async () => {
+      if (CAN_EDIT) {
+        MY_PIN = '';
+        try { sessionStorage.removeItem('herbarium_pin'); } catch(e) {}
+        toast(T('pinExit'), 'ok');
+        load();
+        return;
+      }
+      const inputPin = prompt(T('pinPrompt'));
+      if (inputPin === null) return;
+      try {
+        const res = await run('verifyPin', inputPin);
+        if (res && res.ok) {
+          MY_PIN = inputPin;
+          try { sessionStorage.setItem('herbarium_pin', MY_PIN); } catch(e) {}
+          toast(T('pinSuccess'), 'ok');
+          load();
+        } else {
+          toast(T('pinErr'), 'err');
+        }
+      } catch (e) {
+        toast(T('pinErr'), 'err');
+      }
+    };
+  }
+
+  role.title=(USER?USER+' · ':'')+(CAN_EDIT?T('roleRWt'):T('roleROt'));
+  $('#editinfo').hidden=CAN_EDIT;
+  $('#editinfo').textContent=CAN_EDIT?'':(data.version>=5&&data.editInfoI18n?data.editInfoI18n[LANG]:(data.version>=4?data.editInfo:T('oldCode')));
+}
+function setLang(l){
+  if(l===LANG) return;
+  LANG=l; try{ localStorage.setItem('erbario.lang',l); }catch(e){}
+  applyStatic(); M.relabel(); refreshAreaControls();
+  if(typeof google!=='undefined'&&google.script){ try{ google.script.run.withFailureHandler(()=>{}).setLang(l); }catch(e){} }
+  if(LAST_DATA){ parse(LAST_DATA); setupControls(); renderStatus(); }
   update(false);
 }
-
-function update(fitMap = true){
-  const list = filtered();
-  drawPoints(list);
-  if(fitMap && list.length) {
-    const pts = list.map(r => [r.lat, r.lon]);
-    mapFit(pts);
-  }
-  renderPanel(list);
-  
-  const speciesSet = new Set(list.map(r => r.name));
-  const sitesSet = new Set(list.map(r => r.place));
-  $('#counts').innerHTML = `<b>${fmt(list.length)}</b> ${T('specimens')} · <b>${fmt(speciesSet.size)}</b> ${T('species')} · <b>${fmt(sitesSet.size)}</b> ${T('sites')}`;
-}
-
-function renderPanel(list){
-  const panel = $('#panel');
-  if(!list.length){
-    panel.innerHTML = `<div class="empty">${T('noMatch')}</div>`;
-    return;
-  }
-
-  if(selected){
-    const placeRecs = list.filter(r => r.key === selected);
-    const placeName = placeRecs[0] ? placeRecs[0].place : '';
-    let html = `<button type="button" class="back" id="backToSites">${T('allSites')}</button>`;
-    html += `<h2>${esc(placeName)}</h2>`;
-    html += `<div class="specs">`;
-    placeRecs.forEach(r => {
-      html += `<details class="sp"${openRow === r.row ? ' open' : ''}>`;
-      html += `<summary><span class="bn">${esc(r.name)} <small>${esc(r.aut)}</small></span><span class="box">${esc(r.fam)}</span></summary>`;
-      html += `<dl class="label">
-        <dt>${T('lSite')}</dt><dd>${esc(r.site)}</dd>
-        <dt>${T('lDate')}</dt><dd>${esc(r.date || T('dateNA'))}</dd>
-        <dt>${T('lLegit')}</dt><dd>${esc(r.leg || T('legUnknown'))}</dd>
-        <dt>${T('lDet')}</dt><dd>${esc(r.det)}</dd>
-        ${r.note ? `<dt>${T('lNote')}</dt><dd>${esc(r.note)}</dd>` : ''}
-      </dl>`;
-      html += `</details>`;
-    });
-    html += `</div>`;
-    panel.innerHTML = html;
-    $('#backToSites').onclick = () => { selected = null; update(false); };
-    return;
-  }
-
-  // Lista luoghi
-  const groups = groupsFrom(list);
-  let html = `<h3>${T('siteList')}</h3><div class="places">`;
-  groups.slice(0, listLimit).forEach(g => {
-    html += `<button type="button" class="place" data-key="${esc(g.key)}">
-      <span class="dot" style="background:var(--${g.prec})"></span>
-      <span>${esc(g.place)}</span>
-      <span class="n">${fmt(g.n)}</span>
-    </button>`;
-  });
-  html += `</div>`;
-  panel.innerHTML = html;
-
-  panel.querySelectorAll('.place').forEach(btn => {
-    btn.onclick = () => selectPlace(btn.dataset.key);
-  });
-}
-
-function initApp(data){
-  LAST_DATA = data;
-  CAN_EDIT = !!data.canEdit;
-  const role = $('#role');
-  if(role){
-    role.hidden = false;
-    role.className = 'role ' + (CAN_EDIT ? 'rw' : 'ro');
-    role.textContent = CAN_EDIT ? T('roleRW') : T('roleRO');
-  }
-  const newRec = $('#newRec');
-  if(newRec) newRec.hidden = !CAN_EDIT;
-  const pinBtn = $('#pinBtn');
-  if(pinBtn){
-    pinBtn.textContent = CAN_EDIT ? T('pinActive') : T('pinBtn');
-    pinBtn.style.background = CAN_EDIT ? 'var(--loc)' : '';
-    pinBtn.style.color = CAN_EDIT ? '#fff' : '';
-  }
-
-  parse(data);
-  setupControls();
-  if(!M) M = leafletEngine();
-  update(true);
-}
-
-function loadData(){
-  window.apiCall('getData', { pin: MY_PIN })
-    .then(data => {
-      console.log('Dati ricevuti con successo:', data);
-      initApp(data);
-    })
-    .catch(err => {
-      console.error('Errore nel caricamento:', err);
-      const fatal = $('#fatal');
-      if(fatal){ fatal.hidden = false; fatal.textContent = "Errore di caricamento dati: " + err.message; }
-    });
-}
-
-// Collegamento Eventi
-$('#q').oninput = () => update(false);
-$('#fam').onchange = () => update(false);
-$('#leg').onchange = () => update(false);
-$('#box').onchange = () => update(false);
-$('#y0').onchange = () => update(false);
-$('#y1').onchange = () => update(false);
-$('#p-gps').onchange = () => update(false);
-$('#p-loc').onchange = () => update(false);
-$('#p-prov').onchange = () => update(false);
-$('#p-stato').onchange = () => update(false);
-$('#p-photo').onchange = () => update(false);
-
-$('#reset').onclick = () => {
-  $('#filters').reset();
-  $('#p-gps').checked = $('#p-loc').checked = $('#p-prov').checked = $('#p-stato').checked = true;
-  $('#p-photo').checked = false;
-  areaBounds = null;
-  if(M) M.clearArea();
-  refreshAreaControls();
-  update(true);
-};
-
-$('#reload').onclick = () => loadData();
-
-$('#fitAll').onclick = () => update(true);
-$('#fitVen').onclick = () => mapFitNE();
-
-$('#pinBtn').onclick = async () => {
-  if (MY_PIN) {
-    MY_PIN = '';
-    try { sessionStorage.removeItem('herbarium_pin'); } catch(e) {}
-    alert(T('pinExit'));
-    loadData();
-  } else {
-    const p = prompt(T('pinPrompt'));
-    if (!p) return;
-    try {
-      const res = await window.apiCall('verifyPin', { pin: p });
-      if (res && (res.ok || res.valid)) {
-        MY_PIN = p;
-        try { sessionStorage.setItem('herbarium_pin', p); } catch(e) {}
-        alert(T('pinSuccess'));
-        loadData();
-      } else {
-        alert(T('pinErr'));
-      }
-    } catch(err) {
-      alert("Errore: " + err.message);
-    }
-  }
-};
-
-// Avvio automatico al caricamento della pagina
-document.addEventListener('DOMContentLoaded', loadData);
+$('#langBtn').onclick=()=>setLang(LANG==='it'?'en':'it');
+$('#reload').onclick=load;
+load();
 
 })();
+
 </script>
+<script async src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js"></script>
 </body>
 </html>
