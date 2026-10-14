@@ -270,6 +270,56 @@ if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=docu
 </script>
 <script>
 
+// URL della tua Web App Google Apps Script
+const EDITOR_URL = 'https://script.google.com/macros/s/AKfycbyFkj0lXOhhq9c8J-ZL4PTU5DOjioGTnmCcyc7XkeQHGjlhOIpElisgIlJaqY934xpw4Q/exec';
+
+// Mappatura dei parametri per chiamate API ibride (GitHub Pages + Apps Script)
+const PARAM_NAMES = {
+  getData: ['lang', 'pin'],
+  verifyPin: ['pin'],
+  addRecord: ['rec', 'pin'],
+  updateRecord: ['rowNum', 'expectedName', 'rec', 'pin'],
+  uploadPhoto: ['rowNum', 'expectedName', 'base64', 'mimeType', 'fileName', 'pin'],
+  linkPhoto: ['rowNum', 'expectedName', 'imageUrl', 'credit', 'pageUrl', 'pin'],
+  unlinkPhoto: ['rowNum', 'expectedName', 'imageUrl', 'pin'],
+  searchPhotos: ['scientificName'],
+  setLang: ['lang']
+};
+
+function run(action, ...args) {
+  return new Promise((resolve, reject) => {
+    // 1. Esecuzione dentro iframe Google Apps Script
+    if (typeof google !== 'undefined' && google && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)
+        [action](...args);
+      return;
+    }
+
+    // 2. Esecuzione esterna (GitHub Pages) tramite REST API
+    const paramKeys = PARAM_NAMES[action] || [];
+    const payload = { action };
+    paramKeys.forEach((key, idx) => { payload[key] = args[idx]; });
+
+    if (action === 'getData' || action === 'verifyPin' || action === 'searchPhotos') {
+      const params = new URLSearchParams(payload);
+      fetch(EDITOR_URL + '?' + params.toString())
+        .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+        .then(data => { if (data && data.error) reject(new Error(data.error)); else resolve(data); })
+        .catch(reject);
+    } else {
+      fetch(EDITOR_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+        .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+        .then(data => { if (data && data.error) reject(new Error(data.error)); else resolve(data); })
+        .catch(reject);
+    }
+  });
+}
+
 (function(){
   let MY_PIN = (function(){ try { return sessionStorage.getItem('herbarium_pin') || ''; } catch(e) { return ''; } })();
 const GAZ=[
@@ -672,21 +722,16 @@ it:{
   hintPresent:n=>"Già presente nell'erbario: "+n+' campioni.', hintNewSp:"Specie nuova per l'erbario.", hintNewGen:"Genere nuovo per l'erbario: controlla l'ortografia.",
   posSet:s=>'Posizione impostata '+s+'.', srcDevice:'dal GPS del dispositivo', srcMap:'dalla mappa', srcPhoto:'dai dati GPS della foto',
   noGeo:'Questo browser non fornisce la posizione.', locating:'Rilevo la posizione…',
-  geoFail:denied=>'Posizione non disponibile ('+(denied?'permesso negato: questa pagina potrebbe non poter chiedere la posizione':'segnale assente')+'). Inserisci le coordinate, sceglile sulla mappa o aggiungi una foto con GPS.',
+  geoFail:denied=>'Posizione non disponibile ('+(denied?'permesso negato':'segnale assente')+').',
   gpsCleared:'Posizione GPS cancellata.', photoNotAdded:'Foto non aggiunta: ',
   needTaxon:'indica genere e specie', needSite:'indica il sito di raccolta oppure la posizione GPS', badCoords:'controlla latitudine e longitudine', toSave:'Per salvare: ',
-  photoFailAfterSave:(E,row,m)=>(E?'Modifiche salvate':'Campione salvato')+' alla riga '+row+', ma le foto non sono state caricate ('+m+').'+(E?'':' Non salvarlo di nuovo.')+' Aggiungi le foto dalla sua scheda con "Carica foto".',
+  photoFailAfterSave:(E,row,m)=>(E?'Modifiche salvate':'Campione salvato')+' alla riga '+row+', ma le foto non sono state caricate ('+m+').',
   saved:(E,row,n)=>(E?'Modifiche salvate':'Salvato')+' alla riga '+row+(n?' con '+n+' foto':'')+'.', saveFail:'Salvataggio non riuscito: ',
-  outside:'Questa pagina funziona solo dentro Google Apps Script o dal link dell\'app web (.../exec).',
   loading:'Caricamento dei dati dal foglio…', readAt:'letto alle',
   signIn:'Accedi per modificare', signInT:'Apri la versione per editor', rolePub:'Pubblico',
-  roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio: puoi inserire e modificare campioni', roleROt:'puoi solo consultare i dati',
-  oldCode:"Il file Code.gs nell'editor Apps Script è di una versione precedente: sostituiscilo con quello nuovo.",
-  noAccess:'<b>Non hai accesso a questo erbario.</b><br>Per consultarlo chiedi al proprietario di condividerti il foglio Google, poi ricarica la pagina.',
-  detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere il foglio: '+m+'. Ricarica la pagina.',
-  fatalLeaflet:'La libreria della mappa (Leaflet) non si è caricata: controlla la connessione.',
-  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto! Modalità Editing attivata.', pinErr:'PIN errato. Riprova.',
-  pinExit:'Modalità pubblica ripristinata.'
+  roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio', roleROt:'puoi solo consultare i dati',
+  noAccess:'<b>Non hai accesso a questo erbario.</b>', detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere il foglio: '+m,
+  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto!', pinErr:'PIN errato.', pinExit:'Modalità pubblica ripristinata.'
 },
 en:{
   locale:'en-GB', htmlLang:'en', otherLang:'IT', otherLangTitle:'Passa all’italiano',
@@ -712,39 +757,19 @@ en:{
   topFam:'Most represented families', siteList:'Collection sites',
   noMatch:'No specimens match the filters.',
   badImage:'The browser cannot read this image format', uploading:(k,n)=>'Uploading photo '+k+' of '+n+'…',
-  searching:n=>'Searching for <i>'+n+'</i>…',
-  srcDown:'Sources not reachable: ', noSource:'No database answered.',
-  noImages:'No images found.',
+  searching:n=>'Searching for <i>'+n+'</i>…', srcDown:'Sources not reachable: ', noSource:'No database answered.', noImages:'No images found.',
   found:n=>n+' images found', close:'Close', alreadyLinked:'Already linked', linkIt:'Link to specimen', linking:'Linking…', linked:'Linked',
-  extNote:'Images stay on original sites.',
-  searchFail:'Search failed: ', photosLinked:(n,s)=>n+' photos linked to '+s+'.', photoUnlinked:'Photo unlinked.', opFail:'Action failed: ',
-  fEdit:'Edit specimen', fCloneOf:s=>'New specimen like “'+s+'”', fNew:'New specimen',
-  fIntroEdit:r=>'Sheet row '+r+'.',
-  fIntroNew:'Fields marked * are required.',
-  fTaxon:'Taxon', fGenus:'Genus *', fSpecies:'Species *', fAuthor:'Author',
-  fCollection:'Collection', fSite:'Collection site', fSitePh:'e.g. Valle S. Felicita', fProv:'Province', fState:'Country', fDate:'Date', fDatePh:'dd.mm.yyyy',
-  fGps:'GPS position', fLat:'Latitude', fLon:'Longitude', fAcc:'Accuracy (m)', fGeo:'Use my location', fPick:'Pick on map', fPicking:'Click on the map…', fClear:'Clear',
-  fGpsHint:'Position from photo EXIF if available.',
-  fAddPhotos:'Add photos', fPhotos:'Photos', fCam:'Take photo', fGallery:'Choose from gallery', fTake:'Remove',
-  fSaveEdit:'Save changes', fSaveNew:'Save specimen', fCancel:'Cancel', fSaving:'Saving…',
-  hintPresent:n=>'Already in herbarium: '+n+' specimens.', hintNewSp:'New species.', hintNewGen:'New genus.',
-  posSet:s=>'Position set '+s+'.', srcDevice:'from device', srcMap:'from map', srcPhoto:'from photo',
-  noGeo:'Geolocation not available.', locating:'Finding your location…',
-  geoFail:denied=>'Location error.',
-  gpsCleared:'GPS cleared.', photoNotAdded:'Photo error: ',
-  needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ',
-  photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
-  saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ',
-  outside:'This page works inside Google Apps Script or from the web app link (.../exec).',
-  loading:'Loading data…', readAt:'read at',
-  signIn:'Sign in', signInT:'Editor mode', rolePub:'Public',
-  roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only',
-  oldCode:'Code outdated.',
-  noAccess:'<b>No access.</b>',
-  detail:'Details: ', readFail:m=>'Cannot read: '+m,
-  fatalLeaflet:'Map library failed.',
-  pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN!', pinErr:'Incorrect PIN.',
-  pinExit:'Public mode.'
+  extNote:'Images stay on original sites.', searchFail:'Search failed: ', photosLinked:(n,s)=>n+' photos linked to '+s+'.', photoUnlinked:'Photo unlinked.', opFail:'Action failed: ',
+  fEdit:'Edit specimen', fCloneOf:s=>'New specimen like “'+s+'”', fNew:'New specimen', fIntroEdit:r=>'Sheet row '+r+'.', fIntroNew:'Fields marked * are required.',
+  fTaxon:'Taxon', fGenus:'Genus *', fSpecies:'Species *', fAuthor:'Author', fCollection:'Collection', fSite:'Collection site', fSitePh:'e.g. Valle S. Felicita', fProv:'Province', fState:'Country', fDate:'Date', fDatePh:'dd.mm.yyyy',
+  fGps:'GPS position', fLat:'Latitude', fLon:'Longitude', fAcc:'Accuracy (m)', fGeo:'Use my location', fPick:'Pick on map', fPicking:'Click on the map…', fClear:'Clear', fGpsHint:'Position from photo EXIF if available.',
+  fAddPhotos:'Add photos', fPhotos:'Photos', fCam:'Take photo', fGallery:'Choose from gallery', fTake:'Remove', fSaveEdit:'Save changes', fSaveNew:'Save specimen', fCancel:'Cancel', fSaving:'Saving…',
+  hintPresent:n=>'Already in herbarium: '+n+' specimens.', hintNewSp:'New species.', hintNewGen:'New genus.', posSet:s=>'Position set '+s+'.', srcDevice:'from device', srcMap:'from map', srcPhoto:'from photo',
+  noGeo:'Geolocation not available.', locating:'Finding your location…', geoFail:denied=>'Location error.', gpsCleared:'GPS cleared.', photoNotAdded:'Photo error: ',
+  needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ', photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
+  saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ', loading:'Loading data…', readAt:'read at',
+  signIn:'Sign in', signInT:'Editor mode', rolePub:'Public', roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only',
+  noAccess:'<b>No access.</b>', detail:'Details: ', readFail:m=>'Cannot read: '+m, pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN!', pinErr:'Incorrect PIN.', pinExit:'Public mode.'
 }};
 let LANG=(function(){ try{ const s=localStorage.getItem('erbario.lang'); if(s==='it'||s==='en') return s; }catch(e){} return /^it/i.test(navigator.language||'it')?'it':'en'; })();
 const T=(k,...a)=>{ const v=(I18N[LANG]&&I18N[LANG][k]!==undefined)?I18N[LANG][k]:I18N.it[k]; return typeof v==='function'?v(...a):v; };
@@ -768,7 +793,6 @@ const PL = p=>T(PREC_KEY[p]);
 const PN = p=>T('precNote')[p];
 let LAST_DATA=null;
 const GAZ_RX = GAZ.map(([p,la,lo,n])=>[new RegExp(p,'i'),la,lo,n]);
-const run = (fn,...args)=>new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
 let USER='', CAN_EDIT=false;
 
 // ---------- parsing del foglio ----------
@@ -1266,14 +1290,11 @@ let pendingSelectRow=null;
 
 // ---------- caricamento ----------
 function load(){
-  if(typeof google==='undefined'||!google.script){
-    $('#panel').innerHTML='<p class="empty">'+T('outside')+'</p>';
-    return;
-  }
   if(mode!=='form') $('#panel').innerHTML='<p class="empty">'+T('loading')+'</p>';
   $('#reload').disabled=true;
-  google.script.run
-    .withSuccessHandler(data=>{
+  
+  run('getData', LANG, MY_PIN)
+    .then(data => {
       LAST_DATA=data; USER=data.user||''; CAN_EDIT=!!data.canEdit;
       $('#boxFilter').hidden=!!data.publicView;
       $('#collectionFilters').style.gridTemplateColumns=data.publicView?'1fr':'';
@@ -1290,7 +1311,7 @@ function load(){
       $('#reload').disabled=false;
       setTimeout(()=>{if(M)M.resize();if(!window.__fitted){mapFitNE();window.__fitted=true}},50);
     })
-    .withFailureHandler(err=>{
+    .catch(err => {
       const msg=String(err&&err.message||err);
       const denied=/permission|autorizzazion|permess|access|accesso|not found|non trovato/i.test(msg);
       $('#panel').innerHTML=denied
@@ -1298,9 +1319,9 @@ function load(){
         : '<p class="empty">'+T('readFail',esc(msg))+'</p>';
       $('#role').hidden=true; $('#newRec').hidden=true;
       $('#reload').disabled=false;
-    })
-    .getData(LANG, MY_PIN);
+    });
 }
+
 function renderStatus(){
   const data=LAST_DATA; if(!data) return;
   $('#src').textContent=data.spreadsheetName+' › '+data.sheetName+' · '+T('readAt')+' '+new Date(data.updated).toLocaleTimeString(T('locale'),{hour:'2-digit',minute:'2-digit'});
@@ -1342,14 +1363,16 @@ function renderStatus(){
   $('#editinfo').hidden=CAN_EDIT;
   $('#editinfo').textContent=CAN_EDIT?'':(data.version>=5&&data.editInfoI18n?data.editInfoI18n[LANG]:(data.version>=4?data.editInfo:T('oldCode')));
 }
+
 function setLang(l){
   if(l===LANG) return;
   LANG=l; try{ localStorage.setItem('erbario.lang',l); }catch(e){}
   applyStatic(); M.relabel(); refreshAreaControls();
-  if(typeof google!=='undefined'&&google.script){ try{ google.script.run.withFailureHandler(()=>{}).setLang(l); }catch(e){} }
+  run('setLang', l).catch(()=>{});
   if(LAST_DATA){ parse(LAST_DATA); setupControls(); renderStatus(); }
   update(false);
 }
+
 $('#langBtn').onclick=()=>setLang(LANG==='it'?'en':'it');
 $('#reload').onclick=load;
 load();
