@@ -893,7 +893,7 @@ function setupControls(){
   fillSelect($('#leg'),[...counts('leg')].sort((a,b)=>b[1]-a[1]),T('all_m'));
   fillSelect($('#box'),[...counts('box')].sort((a,b)=>(+a[0]||0)-(+b[0]||0)),T('all_f'));
   const years=recs.map(r=>r.year).filter(Boolean);
-  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0 \vert{}\vert{} +$('#y1').value!==y1;
+  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0  +$('#y1').value!==y1;
   YMIN=years.length?Math.min(...years):1900; YMAX=years.length?Math.max(...years):2100;
   if(!keep||!$('#y0').value){ $('#y0').value=YMIN; $('#y1').value=YMAX; }
   $('#y0').min=$('#y1').min=YMIN; $('#y0').max=$('#y1').max=YMAX;
@@ -917,7 +917,7 @@ function finishAreaSelection(bounds){
 function filtered(){
   const terms=norm($('#q').value.trim()).split(/\s+/).filter(Boolean);
   const fam=$('#fam').value, leg=$('#leg').value, box=$('#box').value;
-  const y0=+$('#y0').value \vert{}\vert{} YMIN, y1=+$('#y1').value || YMAX;
+  const y0=+$('#y0').value  YMIN, y1=+$('#y1').value || YMAX;
   const yF=y0>YMIN||y1<YMAX;
   const pOk={gps:$('#p-gps').checked,loc:$('#p-loc').checked,prov:$('#p-prov').checked,stato:$('#p-stato').checked};
   const onlyPh=$('#p-photo').checked;
