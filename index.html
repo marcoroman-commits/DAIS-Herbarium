@@ -918,6 +918,7 @@ function leafletEngine(){
   const OSM_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>';
   const ESRI_IMAGERY_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> · Sources: Esri, Vantor, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community';
   const ESRI_HILLSHADE_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> · Sources: Esri, Vantor, Airbus DS, USGS, NGA, NASA, CGIAR, N Robinson, NCEAS, NLS, OS, NMA, Geodatastyrelsen, Rijkswaterstaat, GSA, Geoland, FEMA, Intermap, and the GIS User Community';
+  const CARTO_LABELS_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
 
   const terrainStops=[[-500,[154,187,202]],[-1,[181,209,216]],[0,[202,215,203]],[100,[198,215,180]],[300,[176,204,159]],[700,[197,207,160]],[1400,[210,194,159]],[2400,[199,171,157]],[4000,[215,203,194]],[8000,[238,232,223]]];
   const colorTable=new Uint8Array(65536*3);
@@ -989,12 +990,20 @@ function leafletEngine(){
   const contoursAvailable=!!(L.esri&&L.esri.Vector&&L.esri.Vector.vectorTileLayer);
   const contourPane=map.createPane('contourPane'); contourPane.style.zIndex='350'; contourPane.style.pointerEvents='none';
   const contours=contoursAvailable?L.esri.Vector.vectorTileLayer('51ca3ce6a16d4080ad955dacd6dd2fe2',{pane:'contourPane',style:style=>{style.layers=style.layers.filter(item=>item.type==='line'||item.type==='symbol');return style}}):null;
-  const topo=L.layerGroup(contours?[terrainColors,relief,contours]:[terrainColors,relief]);
+  
+  const createLabelsLayer=()=>L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,zIndex:10,attribution:CARTO_LABELS_ATTR});
+
+  const labelsTopo=createLabelsLayer();
+  const topo=L.layerGroup(contours?[terrainColors,relief,contours,labelsTopo]:[terrainColors,relief,labelsTopo]);
+
+  const satTile=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_IMAGERY_ATTR});
+  const labelsSat=createLabelsLayer();
+  const sat=L.layerGroup([satTile,labelsSat]);
 
   const TILES={
     road:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:OSM_ATTR}),
     topo,
-    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_IMAGERY_ATTR})
+    sat
   };
   TILES.road.addTo(map);
 
@@ -1096,7 +1105,7 @@ function leafletEngine(){
   map.on('click',async e=>{
     if(areaDrawing||suppressAreaClick)return;
     if(pickCb){pickCb(e.latlng.lat,e.latlng.lng);return}
-    if(!map.hasLayer(TILES.topo))return;
+    if(!map.hasLayer(topo))return;
     const request=++elevationRequest;
     elevationPopup.setLatLng(e.latlng).setContent(T('elevationLoading')).openOn(map);
     const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),10000);
