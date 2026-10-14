@@ -41,12 +41,10 @@
 html,body{height:100%;margin:0}
 .mono{font-family:var(--mono)}
 #src{font-size:11.5px;color:var(--muted)}
-.basemap-topo{filter:brightness(1.06) contrast(.82) opacity(.54);mix-blend-mode:multiply}
-.basemap-sat{filter:brightness(1.14) contrast(.80)}
+.basemap-sat{filter:brightness(1.1) contrast(.88)}
 #map.relief-active{background:#DEE8D7}
-.contour-notice{position:absolute;left:12px;bottom:108px;z-index:450;padding:6px 9px;background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:3px;font-size:12px;pointer-events:none;max-width:230px}
-.leaflet-control-layers{background:var(--surface)!important;color:var(--ink);border:1px solid var(--rule)!important;box-shadow:none!important;font-size:12.5px}
-.leaflet-control-layers-toggle{background-image:none!important;width:auto!important;height:auto!important;padding:5px 9px;font-size:12.5px;color:var(--ink)!important;text-decoration:none}
+.leaflet-control-layers{background:var(--surface)!important;color:var(--ink)!important;border:1px solid var(--rule)!important;box-shadow:0 2px 6px rgba(0,0,0,0.15)!important;font-size:12.5px!important;border-radius:4px!important}
+.leaflet-control-layers-toggle{background-image:none!important;width:auto!important;height:auto!important;padding:6px 12px!important;font-size:12.5px!important;font-weight:600!important;color:var(--ink)!important;text-decoration:none!important;display:flex!important;align-items:center!important;gap:6px!important;white-space:nowrap!important}
 .leaflet-control-layers-toggle::after{content:attr(data-label)}
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;}
@@ -116,20 +114,18 @@ dl.label dt{color:var(--muted)}dl.label dd{margin:0;overflow-wrap:anywhere}
 .leaflet-container{font-family:var(--sans);background:var(--sea)}
 .legend{position:absolute;right:12px;bottom:14px;z-index:500;background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;font-size:12px;display:grid;gap:4px;max-width:220px}
 .legend .i{display:flex;align-items:center;gap:7px}
-.legend .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.legend .dot{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid #fff}
 .legend .s{color:var(--muted);font-size:11px;margin-top:2px}
-.mapbtns{position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 80px);gap:6px}
+.mapbtns{position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 100px);gap:6px}
 .mapbtns button{background:var(--surface)}
 .mapbtns button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
 .area-drawing,.area-drawing .leaflet-interactive{cursor:crosshair!important}
 .area-drawing{touch-action:none}
-.city{font-size:11px;color:var(--label);white-space:nowrap;letter-spacing:.02em;font-family:var(--sans);text-shadow:0 0 3px var(--land),0 0 3px var(--land)}
-.city::before{content:"";display:inline-block;width:3px;height:3px;background:var(--label);border-radius:50%;margin-right:4px;vertical-align:middle}
 .leaflet-tooltip.tt{background:var(--surface);color:var(--ink);border:1px solid var(--rule);box-shadow:none;font-size:12px;border-radius:3px}
 .leaflet-tooltip.tt::before{display:none}
 .leaflet-control-zoom a{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--rule)!important}
-.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 80%,transparent)!important;color:var(--muted)!important}
-.leaflet-control-attribution a{color:var(--muted)!important}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important;font-size:11px!important}
+.leaflet-control-attribution a{color:var(--accent)!important}
 .empty{color:var(--muted);font-size:13px;padding:8px 0}
 #reload{background:var(--accent);color:var(--surface);border-color:var(--accent)}
 #reload:hover{filter:brightness(1.1);color:var(--surface)}
@@ -247,7 +243,6 @@ header.top button{white-space:nowrap;flex:none}
     <div class="mapwrap">
       <div id="map" role="region" data-i18n-aria="mapAria" aria-label="Mappa dei siti di raccolta"></div>
       <div class="mapbtns"><button type="button" id="fitAll" data-i18n="fitAll">Tutti i punti</button><button type="button" id="fitVen" data-i18n="fitNE">Nord-Est</button><button type="button" id="areaSelect" data-i18n="areaSelect" aria-pressed="false">Seleziona area</button><button type="button" id="areaClear" data-i18n="areaClear" hidden>Rimuovi area</button></div>
-      <div id="contourNotice" class="contour-notice" role="status" hidden></div>
       <div class="legend">
         <div class="i"><span class="dot" style="background:var(--gps)"></span><span data-i18n="lgGps">Posizione GPS</span></div>
         <div class="i"><span class="dot" style="background:var(--loc)"></span><span data-i18n="lgLoc">Località riconosciuta</span></div>
@@ -262,8 +257,6 @@ header.top button{white-space:nowrap;flex:none}
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
-<script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
 <script>
 window.addEventListener('error',function(e){var b=document.getElementById('fatal');if(!b)return;b.hidden=false;b.textContent='Errore nella pagina: '+(e.message||'risorsa non caricata')+(e.filename?' ('+e.filename.split('/').pop()+':'+e.lineno+')':'');});
 if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('fatal');if(b){b.hidden=false;b.textContent='La libreria della mappa (Leaflet) non si è caricata: controlla la connessione.';}});}
@@ -273,7 +266,6 @@ if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=docu
 // URL della tua Web App Google Apps Script
 const EDITOR_URL = 'https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec';
 
-// Mappatura dei parametri per chiamate API ibride (GitHub Pages + Apps Script)
 const PARAM_NAMES = {
   getData: ['lang', 'pin'],
   verifyPin: ['pin'],
@@ -288,7 +280,6 @@ const PARAM_NAMES = {
 
 function run(action, ...args) {
   return new Promise((resolve, reject) => {
-    // 1. Esecuzione dentro iframe Google Apps Script
     if (typeof google !== 'undefined' && google && google.script && google.script.run) {
       google.script.run
         .withSuccessHandler(resolve)
@@ -297,7 +288,6 @@ function run(action, ...args) {
       return;
     }
 
-    // 2. Esecuzione esterna (GitHub Pages) tramite REST API
     const paramKeys = PARAM_NAMES[action] || [];
     const payload = { action };
     paramKeys.forEach((key, idx) => { payload[key] = args[idx]; });
@@ -690,7 +680,7 @@ it:{
   mapAria:'Mappa dei siti di raccolta', fitAll:'Tutti i punti', fitNE:'Nord-Est', layers:'Sfondo',
   areaSelect:'Seleziona area', areaCancel:'Annulla selezione', areaClear:'Rimuovi area', areaHint:'Trascina sulla mappa per delimitare l’area.',
   lgGps:'Posizione GPS', lgLoc:'Località riconosciuta', lgProv:'Centro della provincia', lgStato:'Centro dello Stato', lgSize:'Area del cerchio ∝ numero di campioni',
-  baseRoad:'Stradale (OpenStreetMap)', baseTopo:'Rilievo e isoipse (Esri)', contoursZoom:'Ingrandisci la mappa per vedere le isoipse (da zoom 11).', contoursUnavailable:'Isoipse non disponibili: controlla la connessione. Il rilievo resta visibile.', terrainUnavailable:'Colori altimetrici non disponibili: controlla la connessione.', elevationLoading:'Carico la quota stimata…', elevationValue:n=>'Quota del terreno stimata: '+n+' m', elevationSource:'Modello Copernicus GLO-90 (90 m), via Open-Meteo; quota approssimativa del punto, non misurata sul campione.', elevationError:'Quota non disponibile per questo punto. Riprova più tardi.', baseSat:'Satellite (Esri)', imgCredit:'Immagini',
+  baseRoad:'Stradale (OpenStreetMap)', baseTopo:'Rilievo e isoipse (OpenTopoMap)', baseSat:'Satellite (Esri)',
   all_f:'Tutte', all_m:'Tutti',
   precNote:{gps:'Posizione registrata con GPS al momento della raccolta.',loc:'Posizione della località indicata sul cartellino (approssimata).',prov:'Località non riconosciuta: il punto è al centro della provincia. Puoi correggerla nel foglio "Luoghi".',stato:'Località e provincia assenti: il punto è al centro dello Stato. Puoi correggerla nel foglio "Luoghi".'},
   gpsPlace:'Posizione GPS', provinceOf:'Provincia di ',
@@ -706,32 +696,29 @@ it:{
   badImage:'Formato immagine non leggibile dal browser', uploading:(k,n)=>'Carico la foto '+k+' di '+n+'…',
   searching:n=>'Cerco immagini di <i>'+n+'</i> in iNaturalist, GBIF e Wikimedia Commons…',
   srcDown:'Fonti non raggiungibili: ', noSource:'Nessuna banca dati ha risposto. Controlla che lo script sia autorizzato a connettersi a servizi esterni.',
-  noImages:'Nessuna immagine trovata per questo nome. Se il nome è una sinonimia storica, prova a cercare il nome accettato.',
+  noImages:'Nessuna immagine trovata per questo nome.',
   found:n=>n+' immagini trovate', close:'Chiudi', alreadyLinked:'Già collegata', linkIt:'Collega al campione', linking:'Collego…', linked:'Collegata',
-  extNote:"Le immagini restano sui siti d'origine: vengono salvati solo il link e i crediti. Controlla la licenza prima di riutilizzarle.",
+  extNote:"Le immagini restano sui siti d'origine: vengono salvati solo il link e i crediti.",
   searchFail:'Ricerca non riuscita: ', photosLinked:(n,s)=>n+' foto collegate a '+s+'.', photoUnlinked:'Foto scollegata dal campione.', opFail:'Operazione non riuscita: ',
   fEdit:'Modifica campione', fCloneOf:s=>'Nuovo campione come “'+s+'”', fNew:'Nuovo campione',
-  fIntroEdit:r=>'Riga '+r+' del foglio. Le foto già collegate e i dati di inserimento non cambiano.',
-  fIntroNew:'I campi con * sono obbligatori. Il campione viene aggiunto in fondo al foglio.',
+  fIntroEdit:r=>'Riga '+r+' del foglio.', fIntroNew:'I campi con * sono obbligatori.',
   fTaxon:'Taxon', fGenus:'Genere *', fSpecies:'Specie *', fAuthor:'Autore',
-  fCollection:'Raccolta', fSite:'Sito di raccolta', fSitePh:'es. Valle S. Felicita, Bassano del Grappa', fProv:'Provincia', fState:'Stato', fDate:'Data', fDatePh:'gg.mm.aaaa',
+  fCollection:'Raccolta', fSite:'Sito di raccolta', fSitePh:'es. Valle S. Felicita', fProv:'Provincia', fState:'Stato', fDate:'Data', fDatePh:'gg.mm.aaaa',
   fGps:'Posizione GPS', fLat:'Latitudine', fLon:'Longitudine', fAcc:'Precisione (m)', fGeo:'Usa la mia posizione', fPick:'Scegli sulla mappa', fPicking:'Clicca sulla mappa…', fClear:'Cancella',
   fGpsHint:'Se aggiungi una foto scattata con il GPS attivo, la posizione viene letta dalla foto.',
   fAddPhotos:'Aggiungi foto', fPhotos:'Foto', fCam:'Scatta foto', fGallery:'Scegli dalla galleria', fTake:'Togli',
   fSaveEdit:'Salva modifiche', fSaveNew:'Salva campione', fCancel:'Annulla', fSaving:'Salvataggio…',
-  hintPresent:n=>"Già presente nell'erbario: "+n+' campioni.', hintNewSp:"Specie nuova per l'erbario.", hintNewGen:"Genere nuovo per l'erbario: controlla l'ortografia.",
+  hintPresent:n=>"Già presente nell'erbario: "+n+' campioni.', hintNewSp:"Specie nuova per l'erbario.", hintNewGen:"Genere nuovo per l'erbario.",
   posSet:s=>'Posizione impostata '+s+'.', srcDevice:'dal GPS del dispositivo', srcMap:'dalla mappa', srcPhoto:'dai dati GPS della foto',
   noGeo:'Questo browser non fornisce la posizione.', locating:'Rilevo la posizione…',
-  geoFail:denied=>'Posizione non disponibile ('+(denied?'permesso negato':'segnale assente')+').',
-  gpsCleared:'Posizione GPS cancellata.', photoNotAdded:'Foto non aggiunta: ',
+  geoFail:denied=>'Posizione non disponibile.', gpsCleared:'Posizione GPS cancellata.', photoNotAdded:'Foto non aggiunta: ',
   needTaxon:'indica genere e specie', needSite:'indica il sito di raccolta oppure la posizione GPS', badCoords:'controlla latitudine e longitudine', toSave:'Per salvare: ',
   photoFailAfterSave:(E,row,m)=>(E?'Modifiche salvate':'Campione salvato')+' alla riga '+row+', ma le foto non sono state caricate ('+m+').',
   saved:(E,row,n)=>(E?'Modifiche salvate':'Salvato')+' alla riga '+row+(n?' con '+n+' foto':'')+'.', saveFail:'Salvataggio non riuscito: ',
   loading:'Caricamento dei dati dal foglio…', readAt:'letto alle',
-  signIn:'Accedi per modificare', signInT:'Apri la versione per editor', rolePub:'Pubblico',
   roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio', roleROt:'puoi solo consultare i dati',
   noAccess:'<b>Non hai accesso a questo erbario.</b>', detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere il foglio: '+m,
-  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto! Attendere il caricamento dati...', pinErr:'PIN errato.', pinExit:'Ritorno alla modalità pubblica, attendere il caricamento dati...'
+  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto!', pinErr:'PIN errato.', pinExit:'Modalità pubblica ripristinata.'
 },
 en:{
   locale:'en-GB', htmlLang:'en', otherLang:'IT', otherLangTitle:'Passa all’italiano',
@@ -743,7 +730,7 @@ en:{
   mapAria:'Map of collection sites', fitAll:'All points', fitNE:'North-East Italy', layers:'Base map',
   areaSelect:'Select area', areaCancel:'Cancel selection', areaClear:'Clear area', areaHint:'Drag on the map to draw an area.',
   lgGps:'GPS position', lgLoc:'Recognised locality', lgProv:'Province centre', lgStato:'Country centre', lgSize:'Circle area ∝ number of specimens',
-  baseRoad:'Streets (OpenStreetMap)', baseTopo:'Relief and contours (Esri)', contoursZoom:'Zoom in to see contour lines.', contoursUnavailable:'Contours unavailable.', terrainUnavailable:'Elevation colours unavailable.', elevationLoading:'Loading estimated elevation…', elevationValue:n=>'Estimated terrain elevation: '+n+' m', elevationSource:'Copernicus GLO-90 DEM', elevationError:'Elevation unavailable.', baseSat:'Satellite (Esri)', imgCredit:'Imagery',
+  baseRoad:'Streets (OpenStreetMap)', baseTopo:'Relief and contours (OpenTopoMap)', baseSat:'Satellite (Esri)',
   all_f:'All', all_m:'All',
   precNote:{gps:'Position recorded by GPS.',loc:'Position written on label.',prov:'Province centre.',stato:'Country centre.'},
   gpsPlace:'GPS position', provinceOf:'Province of ',
@@ -768,8 +755,7 @@ en:{
   noGeo:'Geolocation not available.', locating:'Finding your location…', geoFail:denied=>'Location error.', gpsCleared:'GPS cleared.', photoNotAdded:'Photo error: ',
   needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ', photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
   saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ', loading:'Loading data…', readAt:'read at',
-  signIn:'Sign in', signInT:'Editor mode', rolePub:'Public', roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only',
-  noAccess:'<b>No access.</b>', detail:'Details: ', readFail:m=>'Cannot read: '+m, pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN! Wait for data loading...', pinErr:'Incorrect PIN.', pinExit:'Back to public mode, wait for data loading...'
+  roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only', pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN!', pinErr:'Incorrect PIN.', pinExit:'Public mode.'
 }};
 let LANG=(function(){ try{ const s=localStorage.getItem('erbario.lang'); if(s==='it'||s==='en') return s; }catch(e){} return /^it/i.test(navigator.language||'it')?'it':'en'; })();
 const T=(k,...a)=>{ const v=(I18N[LANG]&&I18N[LANG][k]!==undefined)?I18N[LANG][k]:I18N.it[k]; return typeof v==='function'?v(...a):v; };
@@ -795,7 +781,6 @@ let LAST_DATA=null;
 const GAZ_RX = GAZ.map(([p,la,lo,n])=>[new RegExp(p,'i'),la,lo,n]);
 let USER='', CAN_EDIT=false;
 
-// ---------- parsing del foglio ----------
 function colIndex(header){
   const h = header.map(x=>norm(x).trim());
   const exact = k=>h.indexOf(k);
@@ -913,7 +898,7 @@ function filtered(){
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 const NE_PTS=[[44.9,10.2],[46.8,13.9]];
 let M=null, lastGroups=[];
-const radiusOf=n=>3.2+Math.sqrt(n)*1.9;
+const radiusOf=n=>3.5+Math.sqrt(n)*2.0;
 const tipHtml=e=>'<div><b>'+esc(e.place)+'</b><br>'+fmt(e.n)+' '+T('specimens')+' · '+e.species.size+' '+T('species')+(e.ph?' · '+e.ph+' '+T('withPhoto'):'')+'</div>';
 function groupsFrom(list){
   const g=new Map();
@@ -927,15 +912,15 @@ function mapFly(lat,lon,z){ if(M) M.fly(lat,lon,z); }
 
 function leafletEngine(){
   const map=L.map('map',{preferCanvas:true,minZoom:3,maxZoom:19});
-  const OSM_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>';
-  const ESRI_IMAGERY_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>';
-  const ESRI_HILLSHADE_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>';
   
-  const relief=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:16,zIndex:2,className:'basemap-topo',attribution:ESRI_HILLSHADE_ATTR});
+  const OSM_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+  const TOPO_ATTR='Mappa &copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC-BY-SA</a>) · Dati &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+  const ESRI_SAT_ATTR='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+
   const TILES={
     road:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:OSM_ATTR}),
-    topo:relief,
-    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_IMAGERY_ATTR})
+    topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:TOPO_ATTR}),
+    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_SAT_ATTR})
   };
   TILES.road.addTo(map);
 
@@ -944,14 +929,38 @@ function leafletEngine(){
     if(layerCtl) layerCtl.remove();
     const b={}; b[T('baseRoad')]=TILES.road; b[T('baseTopo')]=TILES.topo; b[T('baseSat')]=TILES.sat;
     layerCtl=L.control.layers(b,null,{position:'topleft'}).addTo(map);
+    const toggle = document.querySelector('.leaflet-control-layers-toggle');
+    if(toggle) toggle.setAttribute('data-label', '🗺️ ' + T('layers'));
   };
   buildLayers();
   map.attributionControl.setPrefix(false);
   const layer=L.layerGroup().addTo(map);
   let pickCb=null, temp=null, areaRect=null;
+  let areaStart=null, areaBox=null;
 
-  window.addEventListener('resize', ()=>{ map.invalidateSize(); });
-  window.addEventListener('orientationchange', ()=>{ setTimeout(() => map.invalidateSize(), 300); });
+  function onMouseDown(e){
+    if(!areaDrawing) return;
+    areaStart=e.latlng;
+    if(areaBox){ areaBox.remove(); areaBox=null; }
+    L.DomEvent.stopPropagation(e);
+  }
+  function onMouseMove(e){
+    if(!areaDrawing || !areaStart) return;
+    const bounds=L.latLngBounds(areaStart, e.latlng);
+    if(!areaBox){
+      areaBox=L.rectangle(bounds,{color:css('--accent'),weight:2,fillOpacity:.15,interactive:false}).addTo(map);
+    } else {
+      areaBox.setBounds(bounds);
+    }
+  }
+  function onMouseUp(e){
+    if(!areaDrawing || !areaStart) return;
+    const bounds=L.latLngBounds(areaStart, e.latlng);
+    areaStart=null;
+    if(areaBox){ areaBox.remove(); areaBox=null; }
+    if(bounds.getNorthEast().equals(bounds.getSouthWest())){ return; }
+    finishAreaSelection(bounds);
+  }
 
   return {kind:'leaflet',
     draw(groups){
@@ -960,10 +969,11 @@ function leafletEngine(){
         const isSel=e.key===selected;
         const m=L.circleMarker([e.lat,e.lon], {
           radius:radiusOf(e.n),
-          color:isSel?css('--sel'):css('--'+e.prec),
-          weight:isSel?2.5:(e.prec==='gps'?2:1.2),
+          color:isSel?'#0A3F51':'#FFFFFF',
+          weight:isSel?3.5:2,
+          opacity:1,
           fillColor:css('--'+e.prec),
-          fillOpacity:isSel?.75:.45,
+          fillOpacity:isSel?.9:.8,
           bubblingMouseEvents:false
         });
         m.bindTooltip(tipHtml(e),{className:'tt',direction:'top',offset:[0,-4]});
@@ -976,7 +986,22 @@ function leafletEngine(){
     resize(){ map.invalidateSize(); },
     relabel(){ buildLayers(); },
     pick(cb){ pickCb=cb; map.getContainer().classList.toggle('picking',!!cb); },
-    areaMode(on){ map.getContainer().classList.toggle('area-drawing',on); },
+    areaMode(on){
+      map.getContainer().classList.toggle('area-drawing',on);
+      if(on){
+        map.dragging.disable();
+        map.on('mousedown', onMouseDown);
+        map.on('mousemove', onMouseMove);
+        map.on('mouseup', onMouseUp);
+      } else {
+        map.dragging.enable();
+        map.off('mousedown', onMouseDown);
+        map.off('mousemove', onMouseMove);
+        map.off('mouseup', onMouseUp);
+        areaStart=null;
+        if(areaBox){ areaBox.remove(); areaBox=null; }
+      }
+    },
     showArea(bounds){
       if(areaRect){areaRect.remove();areaRect=null}
       if(bounds)areaRect=L.rectangle(bounds,{color:css('--accent'),weight:2,fillOpacity:.09,interactive:false}).addTo(map);
@@ -984,7 +1009,7 @@ function leafletEngine(){
     temp(lat,lon){
       if(temp){temp.remove();temp=null}
       if(lat==null) return;
-      temp=L.circleMarker([lat,lon],{radius:9,color:css('--gps'),weight:3,dashArray:'3 3',fillColor:css('--gps'),fillOpacity:.25,interactive:false}).addTo(map);
+      temp=L.circleMarker([lat,lon],{radius:9,color:'#FFFFFF',weight:3,dashArray:'3 3',fillColor:css('--gps'),fillOpacity:.5,interactive:false}).addTo(map);
     }
   };
 }
@@ -1373,7 +1398,7 @@ function setLang(l){
   update(false);
 }
 
-$('#langBtn').onclick=()=>setLang(LANG==='it'?'en':'it');
+$('#langBtn').onclick=()=>SetLang(LANG==='it'?'en':'it');
 $('#reload').onclick=load;
 load();
 
