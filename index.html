@@ -143,10 +143,7 @@ dl.label dt{color:var(--muted)}dl.label dd{margin:0;overflow-wrap:anywhere}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-button.primary{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600}
-button.primary:hover{filter:brightness(1.1);color:var(--surface)}
 button:disabled{opacity:.55;cursor:progress}
-header.top #newRec{padding:7px 12px;font-size:13px}
 .linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:12px;cursor:pointer}
 .phn{display:inline-block;margin-left:4px;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 5px}
 .photos{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px}
@@ -163,38 +160,14 @@ header.top #newRec{padding:7px 12px;font-size:13px}
 .pc figcaption{font-size:11px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
 .pc figcaption b{color:var(--ink);font-weight:600}
 .pc button{font-size:11.5px;padding:3px 6px}
-.rform{display:grid;gap:14px}
-.rform .fh{display:grid;gap:4px}
-.rform fieldset{border:1px solid var(--rule);border-radius:4px;padding:10px 12px 12px;margin:0;display:grid;gap:8px;background:var(--paper)}
-.rform legend{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600;padding:0 4px}
-.rform input:not([type=checkbox]),.rform textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:6px 8px;width:100%;box-sizing:border-box}
-.rform textarea{resize:vertical}
-.rform input:focus-visible,.rform textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#f-pick.on{background:var(--gps);border-color:var(--gps);color:#fff}
-.fthumbs{display:flex;flex-wrap:wrap;gap:8px}
-.fthumbs figure{margin:0;display:grid;gap:2px;justify-items:start}
-.fthumbs img{width:96px;height:72px;object-fit:cover;border-radius:3px;border:1px solid var(--rule)}
-.err{margin:0;color:#B42318;font-size:13px}
-.actions.sticky{position:sticky;bottom:0;background:var(--surface);padding:10px 0 4px;border-top:1px solid var(--rule)}
-.picking{cursor:crosshair!important}
-.picking .leaflet-interactive{cursor:crosshair!important}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:2000;background:var(--ink);color:var(--surface);padding:9px 14px;border-radius:5px;font-size:13px;max-width:min(520px,calc(100% - 32px));box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .toast.err{background:#B42318;color:#fff}
-@media (max-width:520px){.row3{grid-template-columns:1fr 1fr}}
-aside.formmode .filters{display:none}
 .fatal{position:fixed;left:12px;right:12px;top:12px;z-index:3000;background:#B42318;color:#fff;padding:10px 14px;border-radius:5px;font-size:13px}
-.editinfo{margin:0;font-size:12px;color:var(--ink);background:var(--accent-soft);border-left:3px solid var(--prov);padding:6px 8px;border-radius:3px}
 .pc.broken{display:none}
 .logo{width:104px;object-fit:contain;overflow:hidden}
 @media (max-width:760px){.logo{width:80px}}
-.role{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1px solid currentColor;white-space:nowrap}
-.role.rw{color:var(--loc)}
-.role.ro{color:var(--muted)}
 .langbtn{font-weight:600;font-size:12px;letter-spacing:.06em;padding:5px 9px;min-width:38px}
 header.top button{white-space:nowrap;flex:none}
-.signin{font-size:12.5px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:5px 10px;text-decoration:none;white-space:nowrap}
-.signin:hover{background:var(--accent);color:var(--surface)}
 </style>
 </head>
 <body>
@@ -204,10 +177,7 @@ header.top button{white-space:nowrap;flex:none}
     <div class="titles"><h1>Herbarium</h1>
     <span class="sub" data-i18n="subtitle">Campioni d'erbario geolocalizzati per sito di raccolta · DAIS, Ca' Foscari University of Venice</span></div>
     <div class="counts" id="counts"></div>
-    <span id="role" class="role" hidden></span>
-    <button type="button" id="pinBtn" class="signin">Modalità Editor</button>
     <button type="button" class="langbtn" id="langBtn">EN</button>
-    <button type="button" class="primary" id="newRec" data-i18n="newRec" hidden>+ Nuovo campione</button>
   </header>
   <div class="main">
     <aside>
@@ -237,7 +207,6 @@ header.top button{white-space:nowrap;flex:none}
         <div class="chips"><label class="chip"><input type="checkbox" id="p-photo"><span class="dot" style="background:var(--accent)"></span><span data-i18n="onlyPhoto">Solo campioni con foto</span></label></div>
         <div class="actions"><button type="button" id="reset" data-i18n="reset">Azzera filtri</button><button type="button" id="reload" data-i18n="reload">Aggiorna dati dal foglio</button></div>
         <div id="src"></div>
-        <p id="editinfo" class="editinfo" hidden></p>
       </form>
       <div class="panel" id="panel"></div>
     </aside>
@@ -267,18 +236,12 @@ if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=docu
 </script>
 <script>
 
-const EDITOR_URL = 'https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec';
 
 const PARAM_NAMES = {
-  getData: ['lang', 'pin'],
-  verifyPin: ['pin'],
-  addRecord: ['rec', 'pin'],
-  updateRecord: ['rowNum', 'expectedName', 'rec', 'pin'],
-  uploadPhoto: ['rowNum', 'expectedName', 'base64', 'mimeType', 'fileName', 'pin'],
-  linkPhoto: ['rowNum', 'expectedName', 'imageUrl', 'credit', 'pageUrl', 'pin'],
-  unlinkPhoto: ['rowNum', 'expectedName', 'imageUrl', 'pin'],
-  searchPhotos: ['scientificName'],
-  setLang: ['lang']
+  getData:['lang'],
+  searchPhotos:['scientificName'],
+  setLang:['lang']
 };
 
 function run(action, ...args) {
@@ -295,29 +258,39 @@ function run(action, ...args) {
     const payload = { action };
     paramKeys.forEach((key, idx) => { payload[key] = args[idx]; });
 
-    if (action === 'getData' || action === 'verifyPin' || action === 'searchPhotos') {
-      const params = new URLSearchParams(payload);
-      fetch(EDITOR_URL + '?' + params.toString())
-        .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
-        .then(data => { if (data && data.error) reject(new Error(data.error)); else resolve(data); })
-        .catch(reject);
-    } else {
-      fetch(EDITOR_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      })
-        .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
-        .then(data => { if (data && data.error) reject(new Error(data.error)); else resolve(data); })
-        .catch(reject);
-    }
+if (action === 'getData' || action === 'searchPhotos') {
+
+  const params = new URLSearchParams(payload);
+
+  fetch(API_URL + '?' + params.toString())
+    .then(res => {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(data => {
+      if (data && data.error)
+        reject(new Error(data.error));
+      else
+        resolve(data);
+    })
+    .catch(reject);
+
+} else {
+
+  reject(
+    new Error(
+      'Operazione non disponibile nella versione pubblica'
+    )
+  );
+
+}
   });
 }
 
 (function(){
-  var MY_PIN = (function(){ try { return sessionStorage.getItem('herbarium_pin') || ''; } catch(e) { return ''; } })();
   var recs = [];
   var current = [];
-  var selected = null, listLimit = 200, openRow = null, mode = 'browse';
+  var selected = null, listLimit = 200, openRow = null;
   var areaBounds = null, areaDrawing = false, suppressAreaClick = false;
   var M = null, lastGroups = [];
 
@@ -679,91 +652,301 @@ const STATE={
 
 const I18N={
 it:{
-  locale:'it-IT', htmlLang:'it', otherLang:'EN', otherLangTitle:'Switch to English',
-  title:'Herbarium', subtitle:"Campioni d'erbario geolocalizzati per sito di raccolta · DAIS, Ca' Foscari University of Venice",
-  newRec:'+ Nuovo campione', search:'Cerca', searchPh:'Specie, genere, famiglia, località, raccoglitore…',
-  family:'Famiglia', legit:'Legit', box:'Scatola', year:'Anno di raccolta', from:'Dal', to:'Al',
-  precision:'Precisione della posizione', pGps:'GPS', pLoc:'Località', pProv:'Provincia', pStato:'Stato',
-  onlyPhoto:'Solo campioni con foto', reset:'Azzera filtri', reload:'Aggiorna dati dal foglio',
-  mapAria:'Mappa dei siti di raccolta', fitAll:'Tutti i punti', fitNE:'Nord-Est', layers:'Sfondo',
-  areaSelect:'Seleziona area', areaCancel:'Annulla selezione', areaClear:'Rimuovi area', areaHint:'Trascina sulla mappa per delimitare l’area.',
-  lgGps:'Posizione GPS', lgLoc:'Località riconosciuta', lgProv:'Centro della provincia', lgStato:'Centro dello Stato', lgSize:'Area del cerchio ∝ numero di campioni',
-  baseRoad:'Stradale (OpenStreetMap)', baseTopo:'Rilievo e isoipse (Esri)', contoursZoom:'Ingrandisci la mappa per vedere le isoipse (da zoom 11).', contoursUnavailable:'Isoipse non disponibili: controlla la connessione. Il rilievo resta visibile.', terrainUnavailable:'Colori altimetrici non disponibili: controlla la connessione.', elevationLoading:'Carico la quota stimata…', elevationValue:n=>'Quota del terreno stimata: '+n+' m', elevationSource:'Modello Copernicus GLO-90 (90 m), via Open-Meteo; quota approssimativa del punto, non misurata sul campione.', elevationError:'Quota non disponibile per questo punto. Riprova più tardi.', baseSat:'Satellite (Esri)',
-  all_f:'Tutte', all_m:'Tutti',
-  precNote:{gps:'Posizione registrata con GPS al momento della raccolta.',loc:'Posizione della località indicata sul cartellino (approssimata).',prov:'Località non riconosciuta: il punto è al centro della provincia. Puoi correggerla nel foglio "Luoghi".',stato:'Località e provincia assenti: il punto è al centro dello Stato. Puoi correggerla nel foglio "Luoghi".'},
-  gpsPlace:'Posizione GPS', provinceOf:'Provincia di ',
-  states:{IT:'Italia',SI:'Slovenia',MNE:'Montenegro',DE:'Germania',HR:'Croazia',UK:'Regno Unito'},
-  specimens:'campioni', species:'specie', sites:'siti', withPhoto:'con foto',
-  remove:'Rimuovi', dateNA:'data n.d.', legUnknown:'legit ignoto', linkedPhotos:'Foto collegate', photos:'foto', boxShort:'sc.',
-  lFamily:'Famiglia', lSite:'Sito', lProvState:'Prov. / Stato', lDate:'Data', lLegit:'Legit', lDet:'Determinavit', lGeo:'Geolocalizzato',
-  lNote:'Note', lIns:'Inserito', lMod:'Modificato', lRow:'Riga nel foglio',
-  aSearch:'Cerca foto nelle banche dati', aEdit:'Modifica', aUpload:'Carica foto', aClone:'Nuovo campione come questo',
-  allSites:'← Tutti i siti', labels:'Diciture sui cartellini', specList:'Campioni', showMore:'Mostra altri', showMoreSites:'Mostra altri siti',
-  topFam:'Famiglie più rappresentate', siteList:'Siti di raccolta',
+  locale:'it-IT',
+  htmlLang:'it',
+  otherLang:'EN',
+  otherLangTitle:'Switch to English',
+
+  title:'Herbarium',
+  subtitle:"Campioni d'erbario geolocalizzati per sito di raccolta · DAIS, Ca' Foscari University of Venice",
+
+  search:'Cerca',
+  searchPh:'Specie, genere, famiglia, località, raccoglitore…',
+
+  family:'Famiglia',
+  legit:'Legit',
+  box:'Scatola',
+  year:'Anno di raccolta',
+  from:'Dal',
+  to:'Al',
+
+  precision:'Precisione della posizione',
+
+  pGps:'GPS',
+  pLoc:'Località',
+  pProv:'Provincia',
+  pStato:'Stato',
+
+  onlyPhoto:'Solo campioni con foto',
+
+  reset:'Azzera filtri',
+  reload:'Aggiorna dati dal foglio',
+
+  mapAria:'Mappa dei siti di raccolta',
+
+  fitAll:'Tutti i punti',
+  fitNE:'Nord-Est',
+
+  layers:'Sfondo',
+
+  areaSelect:'Seleziona area',
+  areaCancel:'Annulla selezione',
+  areaClear:'Rimuovi area',
+  areaHint:'Trascina sulla mappa per delimitare l’area.',
+
+  lgGps:'Posizione GPS',
+  lgLoc:'Località riconosciuta',
+  lgProv:'Centro della provincia',
+  lgStato:'Centro dello Stato',
+  lgSize:'Area del cerchio ∝ numero di campioni',
+
+  baseRoad:'Stradale (OpenStreetMap)',
+  baseTopo:'Rilievo e isoipse (Esri)',
+  baseSat:'Satellite (Esri)',
+
+  contoursZoom:'Ingrandisci la mappa per vedere le isoipse (da zoom 11).',
+  contoursUnavailable:'Isoipse non disponibili: controlla la connessione. Il rilievo resta visibile.',
+  terrainUnavailable:'Colori altimetrici non disponibili: controlla la connessione.',
+
+  elevationLoading:'Carico la quota stimata…',
+  elevationValue:n=>'Quota del terreno stimata: '+n+' m',
+
+  elevationSource:'Modello Copernicus GLO-90 (90 m), via Open-Meteo; quota approssimativa del punto, non misurata sul campione.',
+
+  elevationError:'Quota non disponibile per questo punto. Riprova più tardi.',
+
+  all_f:'Tutte',
+  all_m:'Tutti',
+
+  precNote:{
+    gps:'Posizione registrata con GPS al momento della raccolta.',
+    loc:'Posizione della località indicata sul cartellino (approssimata).',
+    prov:'Località non riconosciuta: il punto è al centro della provincia. Puoi correggerla nel foglio "Luoghi".',
+    stato:'Località e provincia assenti: il punto è al centro dello Stato. Puoi correggerla nel foglio "Luoghi".'
+  },
+
+  gpsPlace:'Posizione GPS',
+  provinceOf:'Provincia di ',
+
+  states:{
+    IT:'Italia',
+    SI:'Slovenia',
+    MNE:'Montenegro',
+    DE:'Germania',
+    HR:'Croazia',
+    UK:'Regno Unito'
+  },
+
+  specimens:'campioni',
+  species:'specie',
+  sites:'siti',
+  withPhoto:'con foto',
+
+  dateNA:'data n.d.',
+  legUnknown:'legit ignoto',
+
+  linkedPhotos:'Foto collegate',
+  photos:'foto',
+
+  boxShort:'sc.',
+
+  lFamily:'Famiglia',
+  lSite:'Sito',
+  lProvState:'Prov. / Stato',
+  lDate:'Data',
+  lLegit:'Legit',
+  lDet:'Determinavit',
+  lGeo:'Geolocalizzato',
+
+  lNote:'Note',
+  lIns:'Inserito',
+  lMod:'Modificato',
+  lRow:'Riga nel foglio',
+
+  aSearch:'Cerca foto nelle banche dati',
+
+  allSites:'← Tutti i siti',
+
+  labels:'Diciture sui cartellini',
+  specList:'Campioni',
+
+  showMore:'Mostra altri',
+  showMoreSites:'Mostra altri siti',
+
+  topFam:'Famiglie più rappresentate',
+  siteList:'Siti di raccolta',
+
   noMatch:"Nessun campione corrisponde ai filtri. Prova ad allargare l'intervallo di anni o ad azzerare i filtri.",
-  badImage:'Formato immagine non leggibile dal browser', uploading:(k,n)=>'Carico la foto '+k+' di '+n+'…',
+
   searching:n=>'Cerco immagini di <i>'+n+'</i> in iNaturalist, GBIF e Wikimedia Commons…',
-  srcDown:'Fonti non raggiungibili: ', noSource:'Nessuna banca dati ha risposto. Controlla che lo script sia autorizzato a connettersi a servizi esterni.',
+
+  srcDown:'Fonti non raggiungibili: ',
+
+  noSource:'Nessuna banca dati ha risposto. Controlla che lo script sia autorizzato a connettersi a servizi esterni.',
+
   noImages:'Nessuna immagine trovata per questo nome.',
-  found:n=>n+' immagini trovate', close:'Chiudi', alreadyLinked:'Già collegata', linkIt:'Collega al campione', linking:'Collego…', linked:'Collegata',
-  extNote:"Le immagini restano sui siti d'origine: vengono salvati solo il link e i crediti.",
-  searchFail:'Ricerca non riuscita: ', photosLinked:(n,s)=>n+' foto collegate a '+s+'.', photoUnlinked:'Foto scollegata dal campione.', opFail:'Operazione non riuscita: ',
-  fEdit:'Modifica campione', fCloneOf:s=>'Nuovo campione come “'+s+'”', fNew:'Nuovo campione',
-  fIntroEdit:r=>'Riga '+r+' del foglio.', fIntroNew:'I campi con * sono obbligatori.',
-  fTaxon:'Taxon', fGenus:'Genere *', fSpecies:'Specie *', fAuthor:'Autore',
-  fCollection:'Raccolta', fSite:'Sito di raccolta', fSitePh:'es. Valle S. Felicita', fProv:'Provincia', fState:'Stato', fDate:'Data', fDatePh:'gg.mm.aaaa',
-  fGps:'Posizione GPS', fLat:'Latitudine', fLon:'Longitudine', fAcc:'Precisione (m)', fGeo:'Usa la mia posizione', fPick:'Scegli sulla mappa', fPicking:'Clicca sulla mappa…', fClear:'Cancella',
-  fGpsHint:'Se aggiungi una foto scattata con il GPS attivo, la posizione viene letta dalla foto.',
-  fAddPhotos:'Aggiungi foto', fPhotos:'Foto', fCam:'Scatta foto', fGallery:'Scegli dalla galleria', fTake:'Togli',
-  fSaveEdit:'Salva modifiche', fSaveNew:'Salva campione', fCancel:'Annulla', fSaving:'Salvataggio…',
-  hintPresent:n=>"Già presente nell'erbario: "+n+' campioni.', hintNewSp:"Specie nuova per l'erbario.", hintNewGen:"Genere nuovo per l'erbario.",
-  posSet:s=>'Posizione impostata '+s+'.', srcDevice:'dal GPS del dispositivo', srcMap:'dalla mappa', srcPhoto:'dai dati GPS della foto',
-  noGeo:'Questo browser non fornisce la posizione.', locating:'Rilevo la posizione…',
-  geoFail:denied=>'Posizione non disponibile.', gpsCleared:'Posizione GPS cancellata.', photoNotAdded:'Foto non aggiunta: ',
-  needTaxon:'indica genere e specie', needSite:'indica il sito di raccolta oppure la posizione GPS', badCoords:'controlla latitudine e longitudine', toSave:'Per salvare: ',
-  photoFailAfterSave:(E,row,m)=>(E?'Modifiche salvate':'Campione salvato')+' alla riga '+row+', ma le foto non sono state caricate ('+m+').',
-  saved:(E,row,n)=>(E?'Modifiche salvate':'Salvato')+' alla riga '+row+(n?' con '+n+' foto':'')+'.', saveFail:'Salvataggio non riuscito: ',
-  loading:'Caricamento dei dati dal foglio…', readAt:'letto alle',
-  roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio', roleROt:'puoi solo consultare i dati',
-  noAccess:'<b>Non hai accesso a questo erbario.</b>', detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere il foglio: '+m,
-  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto!', pinErr:'PIN errato.', pinExit:'Modalità pubblica ripristinata.'
-},
+
+  found:n=>n+' immagini trovate',
+
+  close:'Chiudi',
+
+  extNote:'Le immagini restano sui siti d’origine: vengono salvati solo il link e i crediti.',
+
+  searchFail:'Ricerca non riuscita: ',
+
+  opFail:'Operazione non riuscita: ',
+
+  loading:'Caricamento dei dati dal foglio…',
+
+  readAt:'letto alle',
+
+  readFail:m=>'Non riesco a leggere il foglio: '+m
+}
+,
 en:{
-  locale:'en-GB', htmlLang:'en', otherLang:'IT', otherLangTitle:'Passa all’italiano',
-  title:'Herbarium', subtitle:"Herbarium specimens mapped by collection site · DAIS, Ca' Foscari University of Venice",
-  newRec:'+ New specimen', search:'Search', searchPh:'Species, genus, family, locality, collector…',
-  family:'Family', legit:'Collector (legit)', box:'Box', year:'Collection year', from:'From', to:'To',
-  precision:'Location precision', pGps:'GPS', pLoc:'Locality', pProv:'Province', pStato:'Country',
-  onlyPhoto:'Only specimens with photos', reset:'Clear filters', reload:'Reload data from sheet',
-  mapAria:'Map of collection sites', fitAll:'All points', fitNE:'North-East Italy', layers:'Base map',
-  areaSelect:'Select area', areaCancel:'Cancel selection', areaClear:'Clear area', areaHint:'Drag on the map to draw an area.',
-  lgGps:'GPS position', lgLoc:'Recognised locality', lgProv:'Province centre', lgStato:'Country centre', lgSize:'Circle area ∝ number of specimens',
-  baseRoad:'Streets (OpenStreetMap)', baseTopo:'Relief and contours (Esri)', contoursZoom:'Zoom in to see contour lines (zoom 11 or higher).', contoursUnavailable:'Contours unavailable: check your connection.', terrainUnavailable:'Elevation colours unavailable: check your connection.', elevationLoading:'Loading estimated elevation…', elevationValue:n=>'Estimated terrain elevation: '+n+' m', elevationSource:'Copernicus GLO-90 DEM (90 m), via Open-Meteo.', elevationError:'Elevation unavailable at this point.', baseSat:'Satellite (Esri)',
-  all_f:'All', all_m:'All',
-  precNote:{gps:'Position recorded by GPS.',loc:'Position written on label.',prov:'Province centre.',stato:'Country centre.'},
-  gpsPlace:'GPS position', provinceOf:'Province of ',
-  states:{IT:'Italy',SI:'Slovenia',MNE:'Montenegro',DE:'Germany',HR:'Croatia',UK:'United Kingdom'},
-  specimens:'specimens', species:'species', sites:'sites', withPhoto:'with photos',
-  remove:'Remove', dateNA:'no date', legUnknown:'collector unknown', linkedPhotos:'Linked photos', photos:'photos', boxShort:'box',
-  lFamily:'Family', lSite:'Site', lProvState:'Prov. / Country', lDate:'Date', lLegit:'Collector', lDet:'Identified by', lGeo:'Mapped at',
-  lNote:'Notes', lIns:'Added', lMod:'Edited', lRow:'Sheet row',
-  aSearch:'Find photos in databases', aEdit:'Edit', aUpload:'Upload photo', aClone:'New specimen like this',
-  allSites:'← All sites', labels:'Label wording', specList:'Specimens', showMore:'Show', showMoreSites:'Show more sites',
-  topFam:'Most represented families', siteList:'Collection sites',
+  locale:'en-GB',
+  htmlLang:'en',
+  otherLang:'IT',
+  otherLangTitle:'Passa all’italiano',
+
+  title:'Herbarium',
+  subtitle:"Herbarium specimens mapped by collection site · DAIS, Ca' Foscari University of Venice",
+
+  search:'Search',
+  searchPh:'Species, genus, family, locality, collector…',
+
+  family:'Family',
+  legit:'Collector (legit)',
+  box:'Box',
+  year:'Collection year',
+
+  from:'From',
+  to:'To',
+
+  precision:'Location precision',
+
+  pGps:'GPS',
+  pLoc:'Locality',
+  pProv:'Province',
+  pStato:'Country',
+
+  onlyPhoto:'Only specimens with photos',
+
+  reset:'Clear filters',
+  reload:'Reload data from sheet',
+
+  mapAria:'Map of collection sites',
+
+  fitAll:'All points',
+  fitNE:'North-East Italy',
+
+  layers:'Base map',
+
+  areaSelect:'Select area',
+  areaCancel:'Cancel selection',
+  areaClear:'Clear area',
+  areaHint:'Drag on the map to draw an area.',
+
+  lgGps:'GPS position',
+  lgLoc:'Recognised locality',
+  lgProv:'Province centre',
+  lgStato:'Country centre',
+  lgSize:'Circle area ∝ number of specimens',
+
+  baseRoad:'Streets (OpenStreetMap)',
+  baseTopo:'Relief and contours (Esri)',
+  baseSat:'Satellite (Esri)',
+
+  contoursZoom:'Zoom in to see contour lines (zoom 11 or higher).',
+  contoursUnavailable:'Contours unavailable: check your connection.',
+  terrainUnavailable:'Elevation colours unavailable: check your connection.',
+
+  elevationLoading:'Loading estimated elevation…',
+  elevationValue:n=>'Estimated terrain elevation: '+n+' m',
+  elevationSource:'Copernicus GLO-90 DEM (90 m), via Open-Meteo.',
+  elevationError:'Elevation unavailable at this point.',
+
+  all_f:'All',
+  all_m:'All',
+
+  precNote:{
+    gps:'Position recorded by GPS.',
+    loc:'Position written on label.',
+    prov:'Province centre.',
+    stato:'Country centre.'
+  },
+
+  gpsPlace:'GPS position',
+  provinceOf:'Province of ',
+
+  states:{
+    IT:'Italy',
+    SI:'Slovenia',
+    MNE:'Montenegro',
+    DE:'Germany',
+    HR:'Croatia',
+    UK:'United Kingdom'
+  },
+
+  specimens:'specimens',
+  species:'species',
+  sites:'sites',
+  withPhoto:'with photos',
+
+  dateNA:'no date',
+  legUnknown:'collector unknown',
+
+  linkedPhotos:'Linked photos',
+  photos:'photos',
+
+  boxShort:'box',
+
+  lFamily:'Family',
+  lSite:'Site',
+  lProvState:'Prov. / Country',
+  lDate:'Date',
+  lLegit:'Collector',
+  lDet:'Identified by',
+  lGeo:'Mapped at',
+
+  lNote:'Notes',
+  lIns:'Added',
+  lMod:'Edited',
+  lRow:'Sheet row',
+
+  aSearch:'Find photos in databases',
+
+  allSites:'← All sites',
+
+  labels:'Label wording',
+  specList:'Specimens',
+
+  showMore:'Show',
+  showMoreSites:'Show more sites',
+
+  topFam:'Most represented families',
+  siteList:'Collection sites',
+
   noMatch:'No specimens match the filters.',
-  badImage:'The browser cannot read this image format', uploading:(k,n)=>'Uploading photo '+k+' of '+n+'…',
-  searching:n=>'Searching for <i>'+n+'</i>…', srcDown:'Sources not reachable: ', noSource:'No database answered.', noImages:'No images found.',
-  found:n=>n+' images found', close:'Close', alreadyLinked:'Already linked', linkIt:'Link to specimen', linking:'Linking…', linked:'Linked',
-  extNote:'Images stay on original sites.', searchFail:'Search failed: ', photosLinked:(n,s)=>n+' photos linked to '+s+'.', photoUnlinked:'Photo unlinked.', opFail:'Action failed: ',
-  fEdit:'Edit specimen', fCloneOf:s=>'New specimen like “'+s+'”', fNew:'New specimen', fIntroEdit:r=>'Sheet row '+r+'.', fIntroNew:'Fields marked * are required.',
-  fTaxon:'Taxon', fGenus:'Genus *', fSpecies:'Species *', fAuthor:'Author', fCollection:'Collection', fSite:'Collection site', fSitePh:'e.g. Valle S. Felicita', fProv:'Province', fState:'Country', fDate:'Date', fDatePh:'dd.mm.yyyy',
-  fGps:'GPS position', fLat:'Latitude', fLon:'Longitude', fAcc:'Accuracy (m)', fGeo:'Use my location', fPick:'Pick on map', fPicking:'Click on the map…', fClear:'Clear', fGpsHint:'Position from photo EXIF if available.',
-  fAddPhotos:'Add photos', fPhotos:'Photos', fCam:'Take photo', fGallery:'Choose from gallery', fTake:'Remove', fSaveEdit:'Save changes', fSaveNew:'Save specimen', fCancel:'Cancel', fSaving:'Saving…',
-  hintPresent:n=>'Already in herbarium: '+n+' specimens.', hintNewSp:'New species.', hintNewGen:'New genus.', posSet:s=>'Position set '+s+'.', srcDevice:'from device', srcMap:'from map', srcPhoto:'from photo',
-  noGeo:'Geolocation not available.', locating:'Finding your location…', geoFail:denied=>'Location error.', gpsCleared:'GPS cleared.', photoNotAdded:'Photo error: ',
-  needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ', photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
-  saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ', loading:'Loading data…', readAt:'read at',
-  roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only', pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN!', pinErr:'Incorrect PIN.', pinExit:'Public mode.'
+
+  searching:n=>'Searching for <i>'+n+'</i>…',
+
+  srcDown:'Sources not reachable: ',
+  noSource:'No database answered.',
+  noImages:'No images found.',
+
+  found:n=>n+' images found',
+
+  close:'Close',
+
+  extNote:'Images stay on original sites.',
+
+  searchFail:'Search failed: ',
+  opFail:'Action failed: ',
+
+  loading:'Loading data…',
+
+  readAt:'read at'
 }};
 let LANG=(function(){ try{ const s=localStorage.getItem('erbario.lang'); if(s==='it'||s==='en') return s; }catch(e){} return /^it/i.test(navigator.language||'it')?'it':'en'; })();
 const T=(k,...a)=>{ const v=(I18N[LANG]&&I18N[LANG][k]!==undefined)?I18N[LANG][k]:I18N.it[k]; return typeof v==='function'?v(...a):v; };
@@ -786,7 +969,6 @@ const PL = p=>T(PREC_KEY[p]);
 const PN = p=>T('precNote')[p];
 let LAST_DATA=null;
 const GAZ_RX = GAZ.map(([p,la,lo,n])=>[new RegExp(p,'i'),la,lo,n]);
-let USER='', CAN_EDIT=false;
 
 function colIndex(header){
   const h = header.map(x=>norm(x).trim());
@@ -868,8 +1050,8 @@ function setupControls(){
 function refreshAreaControls(){
   $('#areaSelect').textContent=T(areaDrawing?'areaCancel':'areaSelect');
   $('#areaSelect').setAttribute('aria-pressed',String(areaDrawing));
-  $('#areaSelect').disabled=mode==='form'||!window.L;
-  $('#areaClear').hidden=!areaBounds||mode==='form';
+  $('#areaSelect').disabled = !window.L;
+  $('#areaClear').hidden=!areaBounds;
 }
 function cancelAreaSelection(){
   if(!areaDrawing) return;
@@ -1163,10 +1345,26 @@ else { M={draw(){},fit(){},fly(){},resize(){},relabel(){},pick(){},temp(){},area
 refreshAreaControls();
 
 function photoStrip(r){
+
   if(!r.photos.length) return '';
-  return `<div class="photos">${r.photos.map(p=>`<figure class="ph"><a href="${esc(p.page||p.img)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(p.thumb)}" alt="${esc(r.name)}" referrerpolicy="no-referrer"></a>
-    <figcaption>${esc(p.credit)}${CAN_EDIT?` <button type="button" class="linkbtn" data-act="unlink" data-row="${r.row}" data-img="${esc(p.img)}">${T('remove')}</button>`:''}</figcaption></figure>`).join('')}</div>`;
+
+  return `<div class="photos">${
+    r.photos.map(p=>`
+      <figure class="ph">
+        <a href="${esc(p.page||p.img)}"
+           target="_blank"
+           rel="noopener">
+          <img loading="lazy"
+               src="${esc(p.thumb)}"
+               alt="${esc(r.name)}"
+               referrerpolicy="no-referrer">
+        </a>
+        <figcaption>${esc(p.credit)}</figcaption>
+      </figure>
+    `).join('')
+  }</div>`;
 }
+
 function specRow(r){
   const meta=[r.fam,r.date||T('dateNA'),r.leg&&r.leg!=='?'?'leg. '+r.leg:T('legUnknown')].map(esc).join(' · ');
   const phBadge=r.photos.length?`<span class="phn" title="${T('linkedPhotos')}">${r.photos.length} ${T('photos')}</span>`:'';
@@ -1186,18 +1384,16 @@ function specRow(r){
     ${r.modBy?`<dt>${T('lMod')}</dt><dd>${esc(r.modBy)}${r.modAt?', '+esc(r.modAt):''}</dd>`:''}
     <dt>${T('lRow')}</dt><dd class="mono">${r.row}</dd>
   </dl>
-  <div class="sp-actions">
-    <button type="button" data-act="search" data-row="${r.row}">${T('aSearch')}</button>
-    ${CAN_EDIT?`<button type="button" data-act="edit" data-row="${r.row}">${T('aEdit')}</button>
-    <button type="button" data-act="upload" data-row="${r.row}">${T('aUpload')}</button>
-    <button type="button" data-act="clone" data-row="${r.row}">${T('aClone')}</button>`:''}
-  </div>
+<div class="sp-actions">
+  <button type="button" data-act="search" data-row="${r.row}">
+    ${T('aSearch')}
+  </button>
+</div>
   <div class="psearch" id="ps-${r.row}" hidden></div>
   </details>`;
 }
 function renderPanel(list){
   $('#counts').innerHTML=`<span><b>${fmt(list.length)}</b> / ${fmt(recs.length)} ${T('specimens')}</span><span><b>${fmt(new Set(list.map(r=>r.name)).size)}</b> ${T('species')}</span><span><b>${fmt(lastGroups.length)}</b> ${T('sites')}</span>`;
-  if(mode==='form') return;
   const p=$('#panel');
   if(selected){
     const here=list.filter(r=>r.key===selected);
@@ -1228,7 +1424,6 @@ function renderPanel(list){
   const more=$('#more'); if(more) more.onclick=()=>{listLimit+=200;renderPanel(list)};
 }
 function selectPlace(key,fly){
-  if(mode==='form') return;
   selected=key; listLimit=200; openRow=null; update(false);
   if(fly){const g=lastGroups.find(x=>x.key===key); if(g) mapFly(g.lat,g.lon,10);}
   $('#panel').scrollTop=0;
@@ -1246,7 +1441,7 @@ $('#fitAll').onclick=()=>mapFit(lastGroups.map(g=>[g.lat,g.lon]));
 $('#fitVen').onclick=mapFitNE;
 $('#areaSelect').onclick=()=>{
   if(areaDrawing){cancelAreaSelection();return}
-  if(mode==='form'||!window.L)return;
+  if(!window.L)return;
   areaDrawing=true; M.areaMode(true); refreshAreaControls(); toast(T('areaHint'));
 };
 $('#areaClear').onclick=()=>{
@@ -1257,276 +1452,231 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&areaDrawing)cancelA
 dark.addEventListener&&dark.addEventListener('change',()=>drawPoints(current));
 function toast(msg,kind){ const el=$('#toast'); el.textContent=msg; el.className='toast '+(kind||''); el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true, kind==='err'?9000:4500); }
 
-async function prepPhoto(file){
-  let gps=null;
-  try{ if(window.exifr){ const g=await exifr.gps(file); if(g&&isFinite(g.latitude)&&isFinite(g.longitude)) gps={lat:g.latitude,lon:g.longitude}; } }catch(e){}
-  const url=URL.createObjectURL(file);
-  try{
-    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(T('badImage')));i.src=url;});
-    const max=2000; const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
-    const c=document.createElement('canvas'); c.width=Math.round(img.naturalWidth*s); c.height=Math.round(img.naturalHeight*s);
-    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    const data=c.toDataURL('image/jpeg',.85);
-    return {name:(file.name||'foto').replace(/\.[^.]+$/,'')+'.jpg', b64:data.split(',')[1], preview:data, gps};
-  } finally { URL.revokeObjectURL(url); }
-}
-function pickFiles(capture){
-  return new Promise(res=>{
-    const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=!capture;
-    if(capture) inp.setAttribute('capture','environment');
-    inp.onchange=()=>res([...inp.files]); inp.click();
-  });
-}
-async function uploadTo(rec, files){
-  let ok=0;
-  for(const [k,f] of files.entries()){
-    toast(T('uploading',k+1,files.length));
-    const p = f.b64 ? f : await prepPhoto(f);
-    const r = await run('uploadPhoto', rec.row, rec.name, p.b64, 'image/jpeg', p.name, MY_PIN);
-    rec.photos.push(...parsePhotos(`${r.url} | ${r.credit} | ${r.url}`)); ok++;
+async function doSearch(rec) {
+
+  const box = $('#ps-' + rec.row);
+  if (!box) return;
+
+  box.hidden = false;
+
+  box.innerHTML =
+    '<p class="note">' +
+    T('searching', esc(rec.name)) +
+    '</p>';
+
+  try {
+
+    const raw = await run('searchPhotos', rec.name);
+
+    const res = Array.isArray(raw)
+      ? raw
+      : ((raw && raw.items) || []);
+
+    const srcErr = (raw && raw.errors) || [];
+
+    const errHtml = srcErr.length
+      ? '<p class="note">' +
+          T('srcDown') +
+          srcErr.map(esc).join('; ') +
+          '</p>'
+      : '';
+
+    if (!res.length) {
+
+      box.innerHTML =
+        '<p class="note">' +
+        (srcErr.length === 3
+          ? T('noSource')
+          : T('noImages')) +
+        '</p>' +
+        errHtml;
+
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="psh">
+        <span class="lbl">
+          ${T('found', res.length)}
+        </span>
+
+        <button
+          type="button"
+          class="linkbtn"
+          data-act="closesearch"
+          data-row="${rec.row}">
+          ${T('close')}
+        </button>
+      </div>
+
+      <div class="pgrid">
+
+        ${res.map(p => `
+          <figure class="pc">
+
+            <a
+              href="${esc(p.page || p.image || '#')}"
+              target="_blank"
+              rel="noopener">
+
+              <img
+                loading="lazy"
+                src="${esc(p.thumb || p.image || '')}"
+                alt="${esc(p.taxon || rec.name)}"
+                referrerpolicy="no-referrer"
+                onerror="this.closest('figure').classList.add('broken')">
+
+            </a>
+
+            <figcaption>
+
+              <b>${esc(p.source || '')}</b>
+
+              ${
+                p.taxon &&
+                norm(p.taxon) !== norm(rec.name)
+                  ? ` · <i>${esc(p.taxon)}</i>`
+                  : ''
+              }
+
+              <br>
+
+              <span>
+                ${esc(
+                  (p.credit || '')
+                    .replace(/^[^·]+·\s*/, '')
+                )}
+              </span>
+
+            </figcaption>
+
+          </figure>
+        `).join('')}
+
+      </div>
+
+      ${errHtml}
+
+      <p class="note">
+        ${T('extNote')}
+      </p>
+    `;
+
+  } catch (err) {
+
+    box.innerHTML =
+      '<p class="note">' +
+      T('searchFail') +
+      esc(err && err.message ? err.message : String(err)) +
+      '</p>';
   }
-  return ok;
 }
-async function doSearch(rec){
-  const box=$('#ps-'+rec.row); if(!box) return;
-  box.hidden=false; box.innerHTML='<p class="note">'+T('searching',esc(rec.name))+'</p>';
-  try{
-    const raw=await run('searchPhotos', rec.name);
-    const res=Array.isArray(raw)?raw:(raw&&raw.items)||[];
-    const srcErr=(raw&&raw.errors)||[];
-    const errHtml=srcErr.length?'<p class="note">'+T('srcDown')+srcErr.map(esc).join('; ')+'</p>':'';
-    if(!res.length){ box.innerHTML='<p class="note">'+(srcErr.length===3?T('noSource'):T('noImages'))+'</p>'+errHtml; return; }
-    const linked=new Set(rec.photos.map(p=>p.img));
-    box.innerHTML=`<div class="psh"><span class="lbl">${T('found',res.length)}</span><button type="button" class="linkbtn" data-act="closesearch" data-row="${rec.row}">${T('close')}</button></div>
-      <div class="pgrid">${res.map((p,i)=>`<figure class="pc"><a href="${esc(p.page)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(p.thumb)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('figure').classList.add('broken')"></a>
-      <figcaption><b>${esc(p.source)}</b>${p.taxon&&norm(p.taxon)!==norm(rec.name)?` · <i>${esc(p.taxon)}</i>`:''}<br><span>${esc(p.credit.replace(/^[^·]+·\s*/,''))}</span></figcaption>${CAN_EDIT?(linked.has(p.image)?'<span class="note">'+T('alreadyLinked')+'</span>':`<button type="button" data-act="link" data-row="${rec.row}" data-i="${i}">${T('linkIt')}</button>`):''}</figure>`).join('')}</div>
-      ${errHtml}<p class="note">${T('extNote')}</p>`;
-    box._results=res;
-  }catch(err){ box.innerHTML='<p class="note">'+T('searchFail')+esc(err.message||err)+'</p>'; }
-}
+
 $('#panel').addEventListener('toggle',e=>{ const d=e.target; if(d.matches&&d.matches('details.sp')) openRow=d.open?+d.dataset.row:(openRow===+d.dataset.row?null:openRow); },true);
-$('#panel').addEventListener('click',async e=>{
-  const b=e.target.closest('button[data-act]'); if(!b||mode==='form') return;
-  const rec=recs.find(r=>r.row===+b.dataset.row); if(!rec) return;
-  const act=b.dataset.act; openRow=rec.row;
-  try{
-    if(act==='search'){ doSearch(rec); }
-    else if(act==='closesearch'){ const x=$('#ps-'+rec.row); x.hidden=true; x.innerHTML=''; }
-    else if(act==='upload'){
-      const files=await pickFiles(false); if(!files.length) return;
-      b.disabled=true; const n=await uploadTo(rec,files); toast(T('photosLinked',n,rec.name),'ok'); update(false);
+$('#panel').addEventListener('click', async e => {
+
+  const b = e.target.closest('button[data-act]');
+  if(!b) return;
+
+  const rec = recs.find(r => r.row === +b.dataset.row);
+  if(!rec) return;
+
+  const act = b.dataset.act;
+
+  try {
+
+    if(act === 'search') {
+      doSearch(rec);
     }
-    else if(act==='link'){
-      const p=$('#ps-'+rec.row)._results[+b.dataset.i]; b.disabled=true; b.textContent=T('linking');
-      await run('linkPhoto', rec.row, rec.name, p.image, p.credit, p.page, MY_PIN);
-      rec.photos.push(...parsePhotos(`${p.image} | ${p.credit} | ${p.page}`));
-      b.replaceWith(Object.assign(document.createElement('span'),{className:'note',textContent:T('linked')}));
-      const strip=document.querySelector(`details.sp[data-row="${rec.row}"] .photos`);
-      const tmp=document.createElement('div'); tmp.innerHTML=photoStrip(rec);
-      if(strip) strip.replaceWith(tmp.firstElementChild); else document.querySelector(`details.sp[data-row="${rec.row}"] summary`).after(tmp.firstElementChild);
-      drawPoints(current);
+
+    else if(act === 'closesearch') {
+      const x = $('#ps-' + rec.row);
+      if(x){
+        x.hidden = true;
+        x.innerHTML = '';
+      }
     }
-    else if(act==='unlink'){
-      b.disabled=true; await run('unlinkPhoto', rec.row, rec.name, b.dataset.img, MY_PIN);
-      rec.photos=rec.photos.filter(p=>p.img!==b.dataset.img); update(false); toast(T('photoUnlinked'),'ok');
-    }
-    else if(act==='clone'){ openForm(rec,false); }
-    else if(act==='edit'){ openForm(rec,true); }
-  }catch(err){ b.disabled=false; toast(T('opFail')+(err.message||err),'err'); }
+
+  } catch(err) {
+
+    toast(
+      T('opFail') + (err.message || err),
+      'err'
+    );
+
+  }
+
 });
 
-let formPhotos=[];
-const uniq=key=>[...new Set(recs.map(r=>r[key]).filter(v=>v&&v!=='?'))].sort((a,b)=>String(a).localeCompare(String(b),'it',{numeric:true}));
-const dl=(id,vals)=>`<datalist id="${id}">${vals.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
-function openForm(from, isEdit){
-  cancelAreaSelection();
-  mode='form'; selected=null; document.querySelector('aside').classList.add('formmode');
-  refreshAreaControls();
-  const f=from||{}, E=!!(isEdit&&from);
-  const d0=new Date(), today=String(d0.getDate()).padStart(2,'0')+'.'+String(d0.getMonth()+1).padStart(2,'0')+'.'+d0.getFullYear();
-  const title=E?T('fEdit'):(from?T('fCloneOf',esc(from.name)):T('fNew'));
-  const intro=E?T('fIntroEdit',f.row):T('fIntroNew');
-  $('#panel').innerHTML=`<form id="recForm" class="rform" autocomplete="off" novalidate>
-    <div class="fh"><h2>${title}</h2>
-    <p class="note">${intro}</p></div>
-    <fieldset><legend>${T('fTaxon')}</legend>
-      <div class="row2"><div class="field"><label for="f-gen">${T('fGenus')}</label><input id="f-gen" list="dl-gen" required value="${esc(f.gen||'')}"></div>
-      <div class="field"><label for="f-sp">${T('fSpecies')}</label><input id="f-sp" list="dl-sp" required value="${esc((f.sp||'').toLowerCase())}"></div></div>
-      <div class="row2"><div class="field"><label for="f-fam">${T('family')}</label><input id="f-fam" list="dl-fam" value="${esc(f.fam||'')}"></div>
-      <div class="field"><label for="f-aut">${T('fAuthor')}</label><input id="f-aut" value="${esc(f.aut||'')}"></div></div>
-      <p class="note" id="f-taxhint"></p>
-    </fieldset>
-    <fieldset><legend>${T('fCollection')}</legend>
-      <div class="field"><label for="f-site">${T('fSite')}</label><input id="f-site" list="dl-site" value="${esc(f.site||'')}" placeholder="${T('fSitePh')}"></div>
-      <div class="row3"><div class="field"><label for="f-prov">${T('fProv')}</label><input id="f-prov" list="dl-prov" maxlength="3" value="${esc(f.prov||'')}"></div>
-      <div class="field"><label for="f-st">${T('fState')}</label><input id="f-st" list="dl-st" maxlength="3" value="${esc(f.st||'IT')}"></div>
-      <div class="field"><label for="f-date">${T('fDate')}</label><input id="f-date" placeholder="${T('fDatePh')}" value="${esc(E?f.date:today)}"></div></div>
-      <div class="row3"><div class="field"><label for="f-leg">${T('lLegit')}</label><input id="f-leg" list="dl-leg" value="${esc(f.leg||'')}"></div>
-      <div class="field"><label for="f-det">${T('lDet')}</label><input id="f-det" list="dl-det" value="${esc(f.det||'')}"></div>
-      <div class="field"><label for="f-box">${T('box')}</label><input id="f-box" list="dl-box" value="${esc(f.box||'')}"></div></div>
-      <div class="field"><label for="f-note">${T('lNote')}</label><textarea id="f-note" rows="2">${esc(E?f.note:'')}</textarea></div>
-    </fieldset>
-    <fieldset><legend>${T('fGps')}</legend>
-      <div class="row3"><div class="field"><label for="f-lat">${T('fLat')}</label><input id="f-lat" inputmode="decimal" placeholder="45.43812" value="${E&&f.gpsLat!=null?f.gpsLat:''}"></div>
-      <div class="field"><label for="f-lon">${T('fLon')}</label><input id="f-lon" inputmode="decimal" placeholder="12.33591" value="${E&&f.gpsLon!=null?f.gpsLon:''}"></div>
-      <div class="field"><label for="f-acc">${T('fAcc')}</label><input id="f-acc" inputmode="numeric" value="${E&&f.gpsAcc!=null?f.gpsAcc:''}"></div></div>
-      <div class="actions"><button type="button" id="f-geo">${T('fGeo')}</button><button type="button" id="f-pick">${T('fPick')}</button><button type="button" id="f-clr" class="linkbtn">${T('fClear')}</button></div>
-      <p class="note" id="f-gpsmsg">${T('fGpsHint')}</p>
-    </fieldset>
-    <fieldset><legend>${E?T('fAddPhotos'):T('fPhotos')}</legend>
-      <div class="actions"><button type="button" id="f-cam">${T('fCam')}</button><button type="button" id="f-files">${T('fGallery')}</button></div>
-      <div class="fthumbs" id="f-thumbs"></div>
-    </fieldset>
-    <p class="err" id="f-err" hidden></p>
-    <div class="actions sticky"><button type="submit" class="primary" id="f-save">${E?T('fSaveEdit'):T('fSaveNew')}</button><button type="button" id="f-cancel">${T('fCancel')}</button></div>
-    ${dl('dl-gen',uniq('gen'))}${dl('dl-sp',[])}${dl('dl-fam',uniq('fam'))}${dl('dl-site',uniq('site'))}${dl('dl-prov',uniq('prov'))}${dl('dl-st',uniq('st'))}${dl('dl-leg',uniq('leg'))}${dl('dl-det',uniq('det'))}${dl('dl-box',uniq('box'))}
-  </form>`;
-  $('#panel').scrollTop=0;
-  formPhotos=[];
-  const gen=$('#f-gen'), sp=$('#f-sp');
-  const fillSp=()=>{ const g=norm(gen.value); $('#dl-sp').innerHTML=uniq('sp').length?[...new Set(recs.filter(r=>norm(r.gen)===g).map(r=>r.sp.toLowerCase()))].sort().map(v=>`<option value="${esc(v)}">`).join(''):''; };
-  const taxHint=()=>{
-    const g=norm(gen.value), s=norm(sp.value);
-    const same=recs.filter(r=>norm(r.gen)===g&&norm(r.sp)===s);
-    const sameG=recs.find(r=>norm(r.gen)===g);
-    if(same.length){ if(!$('#f-fam').value) $('#f-fam').value=same[0].fam; if(!$('#f-aut').value) $('#f-aut').value=same[0].aut;
-      $('#f-taxhint').textContent=T('hintPresent',same.length); }
-    else if(sameG){ if(!$('#f-fam').value) $('#f-fam').value=sameG.fam; $('#f-taxhint').textContent=g&&s?T('hintNewSp'):''; }
-    else $('#f-taxhint').textContent=g&&s?T('hintNewGen'):'';
-  };
-  gen.addEventListener('change',()=>{fillSp();taxHint()}); sp.addEventListener('change',taxHint); fillSp(); if(from&&!E) taxHint();
-  if(E&&f.gpsLat!=null&&f.gpsLon!=null){ M.temp(f.gpsLat,f.gpsLon); }
-  const setPos=(lat,lon,acc,src)=>{ $('#f-lat').value=lat.toFixed(6); $('#f-lon').value=lon.toFixed(6); $('#f-acc').value=acc!=null?Math.round(acc):''; M.temp(lat,lon); mapFly(lat,lon,13); $('#f-gpsmsg').textContent=T('posSet',src); };
-  const posChanged=()=>{ const la=num($('#f-lat').value), lo=num($('#f-lon').value); if(la!=null&&lo!=null) M.temp(la,lo); };
-  $('#f-lat').addEventListener('change',posChanged); $('#f-lon').addEventListener('change',posChanged);
-  $('#f-geo').onclick=()=>{
-    if(!navigator.geolocation){ $('#f-gpsmsg').textContent=T('noGeo'); return; }
-    $('#f-gpsmsg').textContent=T('locating');
-    navigator.geolocation.getCurrentPosition(p=>setPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,T('srcDevice')),
-      err=>{ $('#f-gpsmsg').textContent=T('geoFail',err.code===1); },
-      {enableHighAccuracy:true,timeout:20000,maximumAge:0});
-  };
-  $('#f-pick').onclick=()=>{
-    const on=!$('#f-pick').classList.contains('on');
-    $('#f-pick').classList.toggle('on',on); $('#f-pick').textContent=on?T('fPicking'):T('fPick');
-    M.pick(on?(la,lo)=>{ setPos(la,lo,null,T('srcMap')); $('#f-pick').classList.remove('on'); $('#f-pick').textContent=T('fPick'); M.pick(null); }:null);
-  };
-  $('#f-clr').onclick=()=>{ ['#f-lat','#f-lon','#f-acc'].forEach(s=>$(s).value=''); M.temp(null);$('#f-gpsmsg').textContent=T('gpsCleared'); };
-  const addFiles=async files=>{
-    for(const file of files){
-      try{
-        const p=await prepPhoto(file); formPhotos.push(p);
-        if(p.gps && !$('#f-lat').value) setPos(p.gps.lat,p.gps.lon,null,T('srcPhoto'));
-      }catch(err){ toast(T('photoNotAdded')+err.message,'err'); }
-    }
-    renderThumbs();
-  };
-  const renderThumbs=()=>{ $('#f-thumbs').innerHTML=formPhotos.map((p,i)=>`<figure><img src="${p.preview}" alt="${T('fPhotos')} ${i+1}"><button type="button" class="linkbtn" data-rm="${i}">${T('fTake')}</button>${p.gps?'<span class="note">GPS</span>':''}</figure>`).join('');
-    $('#f-thumbs').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{formPhotos.splice(+b.dataset.rm,1);renderThumbs()}); };
-  $('#f-cam').onclick=async()=>addFiles(await pickFiles(true));
-  $('#f-files').onclick=async()=>addFiles(await pickFiles(false));
-  $('#f-cancel').onclick=closeForm;
-  $('#recForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const v=id=>$(id).value.trim();
-    const err=$('#f-err'); err.hidden=true;
-    const la=num(v('#f-lat')), lo=num(v('#f-lon'));
-    const problems=[];
-    if(!v('#f-gen')||!v('#f-sp')) problems.push(T('needTaxon'));
-    if(!v('#f-site')&&(la==null||lo==null)) problems.push(T('needSite'));
-    if((la!=null)!==(lo!=null)||(la!=null&&(Math.abs(la)>90||Math.abs(lo)>180))) problems.push(T('badCoords'));
-    if(problems.length){ err.textContent=T('toSave')+problems.join('; ')+'.'; err.hidden=false; return; }
-    const date=v('#f-date').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3.$2.$1');
-    const rec={gen:v('#f-gen'),sp:v('#f-sp'),fam:v('#f-fam'),aut:v('#f-aut'),site:v('#f-site'),prov:v('#f-prov'),st:v('#f-st')||'IT',date,
-      leg:v('#f-leg'),det:v('#f-det'),box:v('#f-box'),note:v('#f-note'),gpsLat:la,gpsLon:lo,gpsAcc:num(v('#f-acc'))};
-    const save=$('#f-save'); save.disabled=true; save.textContent=T('fSaving');
-    try{
-      const res = E ? await run('updateRecord', f.row, f.name, rec, MY_PIN) : await run('addRecord', rec, MY_PIN);
-      let nph=0, phErr=null;
-      if(formPhotos.length){ try{ nph=await uploadTo({row:res.row,name:res.name,photos:[]},formPhotos); }catch(pe){ phErr=pe; } }
-      if(phErr) toast(T('photoFailAfterSave',E,res.row,String(phErr.message||phErr).slice(0,160)),'err');
-      else toast(T('saved',E,res.row,nph),'ok');
-      closeForm(false); pendingSelectRow=res.row; load();
-    }catch(ex){ err.textContent=T('saveFail')+(ex.message||ex); err.hidden=false; save.disabled=false; save.textContent=E?T('fSaveEdit'):T('fSaveNew'); }
-  });
-}
-function closeForm(render=true){ mode='browse'; document.querySelector('aside').classList.remove('formmode'); M.pick(null); M.temp(null); refreshAreaControls(); if(render) update(false); }
-$('#newRec').onclick=()=>openForm(null);
-let pendingSelectRow=null;
-
 function load(){
-  if(mode!=='form') $('#panel').innerHTML='<p class="empty">'+T('loading')+'</p>';
-  $('#reload').disabled=true;
-  
-  run('getData', LANG, MY_PIN)
+
+  $('#panel').innerHTML =
+    '<p class="empty">' +
+    T('loading') +
+    '</p>';
+
+  $('#reload').disabled = true;
+
+  run('getData', LANG)
+
     .then(data => {
-      LAST_DATA=data; USER=data.user||''; CAN_EDIT=!!data.canEdit;
-      $('#boxFilter').hidden=!!data.publicView;
-      $('#collectionFilters').style.gridTemplateColumns=data.publicView?'1fr':'';
-      if(data.publicView)$('#box').value='';
-      $('#newRec').hidden=!CAN_EDIT;
-      parse(data); setupControls();
-      if(pendingSelectRow){
-        const r=recs.find(x=>x.row===pendingSelectRow); pendingSelectRow=null;
-        if(r){ selected=r.key; openRow=r.row; update(false); mapFly(r.lat,r.lon,r.prec==='gps'?13:10); }
-        else update(false);
-      } else { selected=null; update(false); }
+
+      LAST_DATA = data;
+
+      $('#boxFilter').hidden = !!data.publicView;
+
+      $('#collectionFilters').style.gridTemplateColumns =
+        data.publicView ? '1fr' : '';
+
+      if(data.publicView){
+        $('#box').value = '';
+      }
+
+      parse(data);
+      setupControls();
+
+      selected = null;
+      openRow = null;
+      listLimit = 200;
+
+      update(false);
+
       renderStatus();
-      if(!CAN_EDIT && mode==='form') closeForm();
-      $('#reload').disabled=false;
-      setTimeout(()=>{if(M)M.resize();if(!window.__fitted){mapFitNE();window.__fitted=true}},50);
+
+      $('#reload').disabled = false;
+
+      setTimeout(() => {
+
+        if(M) M.resize();
+
+        if(!window.__fitted){
+          mapFitNE();
+          window.__fitted = true;
+        }
+
+      }, 50);
+
     })
+
     .catch(err => {
-      const msg=String(err&&err.message||err);
-      const denied=/permission|autorizzazion|permess|access|accesso|not found|non trovato/i.test(msg);
-      $('#panel').innerHTML=denied
-        ? '<p class="empty">'+T('noAccess')+'</p><p class="note">'+T('detail')+esc(msg)+'</p>'
-        : '<p class="empty">'+T('readFail',esc(msg))+'</p>';
-      $('#role').hidden=true; $('#newRec').hidden=true;
-      $('#reload').disabled=false;
+
+      const msg =
+        String(err && err.message || err);
+
+      $('#panel').innerHTML =
+        '<p class="empty">' +
+        T('readFail', esc(msg)) +
+        '</p>';
+
+      $('#reload').disabled = false;
+
     });
+
 }
 
 function renderStatus(){
   const data=LAST_DATA; if(!data) return;
   $('#src').textContent=data.spreadsheetName+' › '+data.sheetName+' · '+T('readAt')+' '+new Date(data.updated).toLocaleTimeString(T('locale'),{hour:'2-digit',minute:'2-digit'});
-  const role=$('#role'); role.hidden=false; role.className='role '+(CAN_EDIT?'rw':'ro');
-  role.textContent=CAN_EDIT?T('roleRW'):T('roleRO');
-
-  const pb=$('#pinBtn');
-  if(pb){
-    pb.textContent = CAN_EDIT ? T('pinActive') : T('pinBtn');
-    pb.style.background = CAN_EDIT ? 'var(--loc)' : '';
-    pb.style.color = CAN_EDIT ? '#fff' : '';
-    pb.onclick = async () => {
-      if (CAN_EDIT) {
-        MY_PIN = '';
-        try { sessionStorage.removeItem('herbarium_pin'); } catch(e) {}
-        toast(T('pinExit'), 'ok');
-        load();
-        return;
-      }
-      const inputPin = prompt(T('pinPrompt'));
-      if (inputPin === null) return;
-      try {
-        const res = await run('verifyPin', inputPin);
-        if (res && res.ok) {
-          MY_PIN = inputPin;
-          try { sessionStorage.setItem('herbarium_pin', MY_PIN); } catch(e) {}
-          toast(T('pinSuccess'), 'ok');
-          load();
-        } else {
-          toast(T('pinErr'), 'err');
-        }
-      } catch (e) {
-        toast(T('pinErr'), 'err');
-      }
-    };
-  }
-
-  role.title=(USER?USER+' · ':'')+(CAN_EDIT?T('roleRWt'):T('roleROt'));
-  $('#editinfo').hidden=CAN_EDIT;
-  $('#editinfo').textContent=CAN_EDIT?'':(data.version>=5&&data.editInfoI18n?data.editInfoI18n[LANG]:(data.version>=4?data.editInfo:T('oldCode')));
 }
 
 function setLang(l){
@@ -1545,6 +1695,5 @@ load();
 })();
 
 </script>
-<script async src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js"></script>
 </body>
 </html>
