@@ -1,30 +1,1098 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Herbarium</title>
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #EEF3F4;
-    }
-    iframe {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herbarium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Spectral:ital,wght@0,500;0,600;1,400;1,500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+
+:root{
+  --paper:#EEF3F4; --surface:#FAFCFC; --ink:#0A3F51; --muted:#56717B; --rule:#CBDADE;
+  --accent:#0F597B; --accent-soft:#DDEBEF;
+  --sea:#D9E2E2; --land:#F4F5F0; --border:#B3BDB2; --label:#6E7A71;
+  --gps:#C2410C; --loc:#4F8A45; --prov:#CFA530; --stato:#0F597B;
+  --sel:#0A3F51;
+  --desc-grad:linear-gradient(90deg,#CFA530 0%,#A5AE48 25%,#6E9A4E 50%,#1D6676 75%,#0F597B 100%);
+  --serif:"Spectral",Georgia,"Times New Roman",serif;
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0B1D25; --surface:#10262F; --ink:#E1ECEF; --muted:#93AEB7; --rule:#23424D;
+    --accent:#6FB6D4; --accent-soft:#16384A;
+    --sea:#141E1E; --land:#212924; --border:#3B463F; --label:#8A968E;
+    --gps:#FB8B5B; --loc:#9CC36A; --prov:#E3BB4A; --stato:#6FB6D4; --sel:#FFFFFF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0B1D25; --surface:#10262F; --ink:#E1ECEF; --muted:#93AEB7; --rule:#23424D;
+  --accent:#6FB6D4; --accent-soft:#16384A;
+  --sea:#141E1E; --land:#212924; --border:#3B463F; --label:#8A968E;
+  --gps:#FB8B5B; --loc:#9CC36A; --prov:#E3BB4A; --stato:#6FB6D4; --sel:#FFFFFF;
+}
+html,body{height:100%;margin:0}
+.mono{font-family:var(--mono)}
+#src{font-size:11.5px;color:var(--muted)}
+.basemap-topo{filter:brightness(1.06) contrast(.82) opacity(.54);mix-blend-mode:multiply}
+.basemap-sat{filter:brightness(1.14) contrast(.80)}
+#map.relief-active{background:#DEE8D7}
+.contour-notice{position:absolute;left:12px;bottom:108px;z-index:450;padding:6px 9px;background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:3px;font-size:12px;pointer-events:none;max-width:230px}
+.leaflet-control-layers{background:var(--surface)!important;color:var(--ink);border:1px solid var(--rule)!important;box-shadow:none!important;font-size:12.5px}
+.leaflet-control-layers-toggle{background-image:none!important;width:auto!important;height:auto!important;padding:5px 9px;font-size:12.5px;color:var(--ink)!important;text-decoration:none}
+.leaflet-control-layers-toggle::after{content:attr(data-label)}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;}
+header.top{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 18px 12px;border-bottom:1px solid var(--rule);background:var(--surface)}
+header.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--desc-grad)}
+.logo{display:block;height:52px;width:auto;background:#fff;border-radius:4px;padding:2px 4px}
+.titles{display:grid;gap:1px}
+header.top h1{margin:0;font-family:var(--sans);font-weight:700;font-size:24px;letter-spacing:.1px;line-height:1.1}
+header.top h1 i{font-family:var(--serif);font-weight:500;color:var(--loc)}
+header.top .sub{color:var(--muted);font-size:13px}
+header.top .counts{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+header.top .counts b{color:var(--ink);font-weight:500}
+.main{display:grid;grid-template-columns:minmax(300px,380px) 1fr;min-height:0}
+aside{border-right:1px solid var(--rule);background:var(--surface);display:flex;flex-direction:column;min-height:0}
+.filters{padding:14px 16px;border-bottom:1px solid var(--rule);display:grid;gap:10px}
+.field{display:grid;gap:4px}
+.field label,.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+#boxFilter[hidden]{display:none}
+input[type=search],input[type=number],select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:6px 8px;width:100%;box-sizing:border-box}
+input:focus-visible,select:focus-visible,button:focus-visible,.place:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.years{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.field label.chip{text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);font-weight:400}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--rule);border-radius:999px;padding:3px 10px 3px 7px;cursor:pointer;user-select:none;background:var(--paper)}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chip:has(input:not(:checked)){opacity:.45}
+.chip:has(input:not(:checked)) .dot{background:transparent!important;border:1.5px solid currentColor}
+.chip:has(input:focus-visible){outline:2px solid var(--accent)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:12.5px;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+.panel{overflow:auto;padding:14px 16px 24px;display:grid;gap:14px;align-content:start;min-height:0}
+.panel h2{margin:0;font-family:var(--serif);font-weight:600;font-size:19px;text-wrap:balance}
+.panel h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.note{font-size:12.5px;color:var(--muted)}
+.prec{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border-radius:3px;padding:1px 7px;border:1px solid currentColor}
+.prec.gps{color:var(--gps)}.prec.loc{color:var(--loc)}.prec.prov{color:var(--prov)}.prec.stato{color:var(--stato)}
+.bars{display:grid;gap:4px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:12.5px;cursor:pointer;background:none;border:0;padding:0;text-align:left;color:var(--ink)}
+.bar:hover{color:var(--accent)}
+.bar .t{position:relative;padding:3px 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bar .t span{position:relative}
+.bar .t::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--accent-soft);border-left:3px solid var(--loc);border-radius:2px}
+.bar .n{font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.places{display:grid;gap:0}
+.place{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--rule);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;border-radius:0;text-align:left;font-size:13px}
+.place:hover{background:var(--accent-soft);color:var(--ink)}
+.place .dot{width:9px;height:9px;border-radius:50%}
+.place .n{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.specs{display:grid;gap:0}
+details.sp{border-bottom:1px solid var(--rule)}
+details.sp summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:7px 2px}
+details.sp summary::-webkit-details-marker{display:none}
+details.sp summary:hover .bn{color:var(--accent)}
+.bn{font-family:var(--serif);font-style:italic;font-size:15.5px}
+.bn small{font-style:normal;font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-left:4px}
+.meta{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.box{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--rule);border-radius:3px;padding:0 5px;align-self:start;margin-top:3px;white-space:nowrap}
+dl.label{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0 0 10px;padding:9px 11px;font-size:12.5px;background:var(--paper);border:1px solid var(--rule);border-radius:3px}
+dl.label dt{color:var(--muted)}dl.label dd{margin:0;overflow-wrap:anywhere}
+.more{justify-self:start}
+.back{justify-self:start}
+.mapwrap{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:var(--sea)}
+.leaflet-container{font-family:var(--sans);background:var(--sea)}
+.legend{position:absolute;right:12px;bottom:14px;z-index:500;background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;font-size:12px;display:grid;gap:4px;max-width:220px}
+.legend .i{display:flex;align-items:center;gap:7px}
+.legend .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.legend .s{color:var(--muted);font-size:11px;margin-top:2px}
+.mapbtns{position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 80px);gap:6px}
+.mapbtns button{background:var(--surface)}
+.mapbtns button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.area-drawing,.area-drawing .leaflet-interactive{cursor:crosshair!important}
+.area-drawing{touch-action:none}
+.city{font-size:11px;color:var(--label);white-space:nowrap;letter-spacing:.02em;font-family:var(--sans);text-shadow:0 0 3px var(--land),0 0 3px var(--land)}
+.city::before{content:"";display:inline-block;width:3px;height:3px;background:var(--label);border-radius:50%;margin-right:4px;vertical-align:middle}
+.leaflet-tooltip.tt{background:var(--surface);color:var(--ink);border:1px solid var(--rule);box-shadow:none;font-size:12px;border-radius:3px}
+.leaflet-tooltip.tt::before{display:none}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--rule)!important}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 80%,transparent)!important;color:var(--muted)!important}
+.leaflet-control-attribution a{color:var(--muted)!important}
+.empty{color:var(--muted);font-size:13px;padding:8px 0}
+#reload{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+#reload:hover{filter:brightness(1.1);color:var(--surface)}
+@media (max-width:760px){
+  .logo{height:40px}
+  .app{height:auto}
+  .main{grid-template-columns:1fr}
+  .mapwrap{order:-1;height:58vh;min-height:320px;border-bottom:1px solid var(--rule)}
+  aside{border-right:0}
+  .panel{overflow:visible}
+  header.top .counts{margin-left:0}
+  .legend{bottom:10px;right:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- azioni, foto, inserimento ---- */
+button.primary{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600}
+button.primary:hover{filter:brightness(1.1);color:var(--surface)}
+button:disabled{opacity:.55;cursor:progress}
+header.top #newRec{padding:7px 12px;font-size:13px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:12px;cursor:pointer}
+.phn{display:inline-block;margin-left:4px;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 5px}
+.photos{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px}
+.ph{margin:0;flex:none;width:150px;display:grid;gap:3px}
+.ph img{width:150px;height:112px;object-fit:cover;border-radius:3px;border:1px solid var(--rule);background:var(--paper);display:block}
+.ph figcaption{font-size:10.5px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
+.sp-actions{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.sp-actions button{font-size:12px;padding:4px 8px}
+.psearch{border:1px solid var(--rule);border-radius:4px;padding:10px;margin:0 0 12px;background:var(--paper);display:grid;gap:8px}
+.psh{display:flex;justify-content:space-between;align-items:center}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.pc{margin:0;display:grid;gap:4px;align-content:start}
+.pc img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:3px;border:1px solid var(--rule);background:var(--surface);display:block;max-width:100%}
+.pc figcaption{font-size:11px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
+.pc figcaption b{color:var(--ink);font-weight:600}
+.pc button{font-size:11.5px;padding:3px 6px}
+.rform{display:grid;gap:14px}
+.rform .fh{display:grid;gap:4px}
+.rform fieldset{border:1px solid var(--rule);border-radius:4px;padding:10px 12px 12px;margin:0;display:grid;gap:8px;background:var(--paper)}
+.rform legend{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600;padding:0 4px}
+.rform input:not([type=checkbox]),.rform textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:6px 8px;width:100%;box-sizing:border-box}
+.rform textarea{resize:vertical}
+.rform input:focus-visible,.rform textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#f-pick.on{background:var(--gps);border-color:var(--gps);color:#fff}
+.fthumbs{display:flex;flex-wrap:wrap;gap:8px}
+.fthumbs figure{margin:0;display:grid;gap:2px;justify-items:start}
+.fthumbs img{width:96px;height:72px;object-fit:cover;border-radius:3px;border:1px solid var(--rule)}
+.err{margin:0;color:#B42318;font-size:13px}
+.actions.sticky{position:sticky;bottom:0;background:var(--surface);padding:10px 0 4px;border-top:1px solid var(--rule)}
+.picking{cursor:crosshair!important}
+.picking .leaflet-interactive{cursor:crosshair!important}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:2000;background:var(--ink);color:var(--surface);padding:9px 14px;border-radius:5px;font-size:13px;max-width:min(520px,calc(100% - 32px));box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.toast.err{background:#B42318;color:#fff}
+@media (max-width:520px){.row3{grid-template-columns:1fr 1fr}}
+aside.formmode .filters{display:none}
+.fatal{position:fixed;left:12px;right:12px;top:12px;z-index:3000;background:#B42318;color:#fff;padding:10px 14px;border-radius:5px;font-size:13px}
+.editinfo{margin:0;font-size:12px;color:var(--ink);background:var(--accent-soft);border-left:3px solid var(--prov);padding:6px 8px;border-radius:3px}
+.pc.broken{display:none}
+.logo{width:104px;object-fit:contain;overflow:hidden}
+@media (max-width:760px){.logo{width:80px}}
+.role{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1px solid currentColor;white-space:nowrap}
+.role.rw{color:var(--loc)}
+.role.ro{color:var(--muted)}
+.langbtn{font-weight:600;font-size:12px;letter-spacing:.06em;padding:5px 9px;min-width:38px}
+header.top button{white-space:nowrap;flex:none}
+.signin{font-size:12.5px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:5px 10px;text-decoration:none;white-space:nowrap}
+.signin:hover{background:var(--accent);color:var(--surface)}
+</style>
 </head>
 <body>
-  <iframe
-    src="https://script.google.com/macros/s/AKfycbxesurN8Gj7kk2uczmsdCpzMZs1HYPEQZGRQN5mC2_WgrGanRQ05gs23Rt7tUoxxKXq-w/exec"
-    title="Herbarium"
-    allow="geolocation; camera">
-  </iframe>
-</body>
-</html>
+<div class="app">
+  <header class="top">
+    <img class="logo" src="https://www.unive.it/web/fileadmin/user_upload/img/loghi/logoDESC.png" width="104" height="52" onerror="this.hidden=true" alt="DESC">
+    <div class="titles"><h1>Herbarium</h1>
+    <span class="sub" data-i18n="subtitle">Campioni d'erbario geolocalizzati per sito di raccolta · DAIS, Ca' Foscari University of Venice</span></div>
+    <div class="counts" id="counts"></div>
+    <span id="role" class="role" hidden></span>
+    <button type="button" id="pinBtn" class="signin">Modalità Editor</button>
+    <button type="button" class="langbtn" id="langBtn">EN</button>
+    <button type="button" class="primary" id="newRec" data-i18n="newRec" hidden>+ Nuovo campione</button>
+  </header>
+  <div class="main">
+    <aside>
+      <form class="filters" id="filters" autocomplete="off">
+        <div class="field">
+          <label for="q" data-i18n="search">Cerca</label>
+          <input type="search" id="q" data-i18n-ph="searchPh" placeholder="Specie, genere, famiglia, località, raccoglitore…">
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fam" data-i18n="family">Famiglia</label><select id="fam"></select></div>
+          <div class="field"><label for="leg" data-i18n="legit">Legit</label><select id="leg"></select></div>
+        </div>
+        <div class="row2" id="collectionFilters" style="grid-template-columns:1fr">
+          <div class="field" id="boxFilter" hidden><label for="box" data-i18n="box">Scatola</label><select id="box"></select></div>
+          <div class="field"><span class="lbl" data-i18n="year">Anno di raccolta</span>
+            <div class="years"><input type="number" id="y0" data-i18n-aria="from" aria-label="Dal"><span>–</span><input type="number" id="y1" data-i18n-aria="to" aria-label="Al"></div>
+          </div>
+        </div>
+        <div class="field"><span class="lbl" data-i18n="precision">Precisione della posizione</span>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" id="p-gps" checked><span class="dot" style="background:var(--gps)"></span><span data-i18n="pGps">GPS</span></label>
+            <label class="chip"><input type="checkbox" id="p-loc" checked><span class="dot" style="background:var(--loc)"></span><span data-i18n="pLoc">Località</span></label>
+            <label class="chip"><input type="checkbox" id="p-prov" checked><span class="dot" style="background:var(--prov)"></span><span data-i18n="pProv">Provincia</span></label>
+            <label class="chip"><input type="checkbox" id="p-stato" checked><span class="dot" style="background:var(--stato)"></span><span data-i18n="pStato">Stato</span></label>
+          </div>
+        </div>
+        <div class="chips"><label class="chip"><input type="checkbox" id="p-photo"><span class="dot" style="background:var(--accent)"></span><span data-i18n="onlyPhoto">Solo campioni con foto</span></label></div>
+        <div class="actions"><button type="button" id="reset" data-i18n="reset">Azzera filtri</button><button type="button" id="reload" data-i18n="reload">Aggiorna dati dal foglio</button></div>
+        <div id="src"></div>
+        <p id="editinfo" class="editinfo" hidden></p>
+      </form>
+      <div class="panel" id="panel"></div>
+    </aside>
+    <div class="mapwrap">
+      <div id="map" role="region" data-i18n-aria="mapAria" aria-label="Mappa dei siti di raccolta"></div>
+      <div class="mapbtns"><button type="button" id="fitAll" data-i18n="fitAll">Tutti i punti</button><button type="button" id="fitVen" data-i18n="fitNE">Nord-Est</button><button type="button" id="areaSelect" data-i18n="areaSelect" aria-pressed="false">Seleziona area</button><button type="button" id="areaClear" data-i18n="areaClear" hidden>Rimuovi area</button></div>
+      <div id="contourNotice" class="contour-notice" role="status" hidden></div>
+      <div class="legend">
+        <div class="i"><span class="dot" style="background:var(--gps)"></span><span data-i18n="lgGps">Posizione GPS</span></div>
+        <div class="i"><span class="dot" style="background:var(--loc)"></span><span data-i18n="lgLoc">Località riconosciuta</span></div>
+        <div class="i"><span class="dot" style="background:var(--prov)"></span><span data-i18n="lgProv">Centro della provincia</span></div>
+        <div class="i"><span class="dot" style="background:var(--stato)"></span><span data-i18n="lgStato">Centro dello Stato</span></div>
+        <div class="s" data-i18n="lgSize">Area del cerchio ∝ numero di campioni</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="fatal" class="fatal" role="alert" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
+<script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
+<script>
+window.addEventListener('error',function(e){var b=document.getElementById('fatal');if(!b)return;b.hidden=false;b.textContent='Errore nella pagina: '+(e.message||'risorsa non caricata')+(e.filename?' ('+e.filename.split('/').pop()+':'+e.lineno+')':'');});
+if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('fatal');if(b){b.hidden=false;b.textContent='La libreria della mappa (Leaflet) non si è caricata: controlla la connessione.';}});}
+</script>
+<script>
+
+(function(){
+  // URL dell'API di Google Apps Script (deployment /exec)
+  const API_URL = "https://script.google.com/macros/s/AKfycbyFkj0lXOhhq9c8J-ZL4PTU5DOjioGTnmCcyc7XkeQHGjlhOIpElisgIlJaqY934xpw4Q/exec";
+
+  async function apiCall(action, params = {}) {
+    const payload = { action, ...params };
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Errore HTTP ' + res.status);
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  let MY_PIN = (function(){ try { return sessionStorage.getItem('herbarium_pin') || ''; } catch(e) { return ''; } })();
+const GAZ=[
+  ["ca.? foscari a san giobbe", 45.444, 12.3217, "Venezia, San Giobbe"],
+  ["ca.? foscari a santa marta", 45.4325, 12.315, "Venezia, Santa Marta"],
+  ["celestin|celestia", 45.4365, 12.35, "Venezia, Celestia"],
+  ["sacca fisola|inceneritore", 45.427, 12.31, "Venezia, Sacca Fisola"],
+  ["sant.? ?erasmo", 45.458, 12.405, "Sant'Erasmo"],
+  ["sant.? ?elena", 45.428, 12.362, "Venezia, Sant'Elena"],
+  ["mazzorbo", 45.486, 12.409, "Mazzorbo"],
+  ["ca.? roman", 45.244, 12.295, "Ca' Roman"],
+  ["santa maria del mare", 45.328, 12.313, "Pellestrina, S. Maria del Mare"],
+  ["pellestrina", 45.28, 12.303, "Pellestrina"],
+  ["alberoni", 45.338, 12.321, "Alberoni, Lido"],
+  ["san nicol", 45.428, 12.39, "Lido, San Nicolò"],
+  ["malomocco", 45.37, 12.338, "Malamocco"],
+  ["punta sabbioni", 45.442, 12.42, "Punta Sabbioni"],
+  ["ca.? savio", 45.448, 12.455, "Ca' Savio"],
+  ["ca.? ?ballarin", 45.46, 12.48, "Ca' Ballarin"],
+  ["cavallino", 45.46, 12.5, "Cavallino-Treporti"],
+  ["valle doga", 45.49, 12.47, "Valle Dogà"],
+  ["sottomarina", 45.2, 12.3, "Sottomarina"],
+  ["bosco nordio", 45.131, 12.269, "Bosco Nordio"],
+  ["valle averto", 45.34, 12.148, "Valle Averto"],
+  ["colmata d-e", 45.33, 12.2, "Cassa di colmata D-E"],
+  ["colmata|comata", 45.37, 12.23, "Cassa di colmata B"],
+  ["canale nuovissimo", 45.26, 12.13, "Canale Nuovissimo"],
+  ["s\\. cassian, venezia|lungo le fondamenta|venezia, centro|venezia, specie|^venezia$", 45.438, 12.335, "Venezia"],
+  ["forte marghera", 45.476, 12.267, "Forte Marghera"],
+  ["marghera", 45.47, 12.24, "Marghera"],
+  ["via torino", 45.478, 12.253, "Mestre, Campus via Torino"],
+  ["forte cosenz", 45.51, 12.26, "Forte Cosenz"],
+  ["bosco di carpenedo", 45.515, 12.278, "Bosco di Carpenedo"],
+  ["carpenedo", 45.502, 12.27, "Carpenedo"],
+  ["cava colombara", 45.53, 12.295, "Cava Colombara, Dese"],
+  ["favaro|fossa? pagana|ca.? sola[rl]", 45.51, 12.29, "Favaro Veneto"],
+  ["campalto", 45.485, 12.295, "Campalto"],
+  ["mestre", 45.49, 12.242, "Mestre"],
+  ["marcon", 45.553, 12.31, "Cave di Gaggio, Marcon"],
+  ["mogliano", 45.562, 12.236, "Mogliano Veneto"],
+  ["martellago", 45.547, 12.158, "Martellago"],
+  ["spinea|nuove gemme|fornase", 45.492, 12.16, "Spinea"],
+  ["scorz", 45.572, 12.11, "Scorzè"],
+  ["treb?h?aseleghe|casa bellato", 45.593, 12.043, "Trebaseleghe"],
+  ["silvelle", 45.6, 12.01, "Silvelle"],
+  ["resana|riombono", 45.63, 11.96, "Resana"],
+  ["malcontenta", 45.442, 12.203, "Malcontenta"],
+  ["\\bmira\\b", 45.437, 12.132, "Mira"],
+  ["dolo", 45.425, 12.077, "Dolo"],
+  ["foss[oò]", 45.385, 12.047, "Fossò"],
+  ["cantarana|\\bcona\\b", 45.2, 12.04, "Cona"],
+  ["cavarzere", 45.137, 12.082, "Cavarzere"],
+  ["fiume dese|praello", 45.56, 12.15, "Fiume Dese"],
+  ["valle vecchia", 45.63, 13.01, "Valle Vecchia"],
+  ["brussa", 45.615, 12.98, "Brussa"],
+  ["caorle", 45.6, 12.887, "Caorle"],
+  ["bibione faro|bibione, faro", 45.637, 13.09, "Bibione, Faro"],
+  ["val ?gra[n]?de|vallegrande", 45.645, 13.06, "Valgrande, Bibione"],
+  ["pineda", 45.64, 13.08, "Bibione Pineda"],
+  ["foci del tagliamento", 45.64, 13.1, "Foce del Tagliamento"],
+  ["bibione", 45.638, 13.03, "Bibione"],
+  ["lison", 45.78, 12.83, "Bosco di Lison"],
+  ["san ?don(à|a')", 45.63, 12.57, "San Donà di Piave"],
+  ["musestre", 45.57, 12.35, "Musestre di Roncade"],
+  ["orto botanico", 45.399, 11.881, "Orto Botanico di Padova"],
+  ["scaricatore", 45.39, 11.89, "Padova, canale Scaricatore"],
+  ["s[ao]rmeola", 45.39, 11.83, "Sarmeola"],
+  ["ponte di bren", 45.415, 11.94, "Ponte di Brenta"],
+  ["vigonza", 45.448, 11.987, "Vigonza"],
+  ["vigonovo", 45.388, 12.007, "Vigonovo"],
+  ["bertipaglia", 45.328, 11.86, "Bertipaglia di Maserà"],
+  ["maser", 45.318, 11.865, "Maserà"],
+  ["casell[ae]", 45.4, 11.79, "Caselle"],
+  ["trepo[mn]ti", 45.36, 11.705, "Treponti di Teolo"],
+  ["luvigliano", 45.347, 11.74, "Luvigliano"],
+  ["torreglia", 45.337, 11.735, "Torreglia"],
+  ["venda", 45.314, 11.672, "Monte Venda"],
+  ["madonna", 45.356, 11.696, "Monte della Madonna"],
+  ["fasolo", 45.29, 11.665, "Monte Fasolo"],
+  ["ventolone|fontanelle, c/o", 45.278, 11.684, "Monte Ventolone"],
+  ["gemola|genda", 45.26, 11.688, "Monte Gemola"],
+  ["m(\\.te|onte) cero", 45.253, 11.66, "Monte Cero"],
+  ["battisti", 45.264, 11.725, "Case Battisti, Arquà"],
+  ["cecilia", 45.26, 11.715, "Monte Cecilia"],
+  ["arqu", 45.27, 11.718, "Arquà Petrarca"],
+  ["sassonegro|sassanego", 45.252, 11.73, "Sassonegro"],
+  ["m[oa]t+olone|moltolone", 45.275, 11.65, "Mottolone"],
+  ["val di spin", 45.279, 11.655, "Val di Spin"],
+  ["cinto", 45.278, 11.66, "Cinto Euganeo"],
+  ["lozzo", 45.295, 11.62, "Monte Lozzo"],
+  ["resi[nm]o", 45.275, 11.63, "Monte Resino"],
+  ["marlunghe", 45.28, 11.64, "Marlunghe"],
+  ["\\bfaed[oe]", 45.296, 11.647, "Faedo"],
+  ["galzignano", 45.307, 11.73, "Galzignano"],
+  ["castelnu?ovo", 45.335, 11.69, "Castelnuovo di Teolo"],
+  ["frassanelle", 45.362, 11.68, "Frassanelle"],
+  ["valle s.? ?giorgio", 45.29, 11.698, "Valle San Giorgio"],
+  ["tramonte", 45.345, 11.765, "Tramonte"],
+  ["ceva", 45.298, 11.74, "Monte Ceva"],
+  ["monte grande", 45.35, 11.63, "Monte Grande"],
+  ["forche", 45.33, 11.69, "Monte delle Forche"],
+  ["teolo", 45.35, 11.67, "Teolo"],
+  ["villa emo|battaglia terme", 45.289, 11.781, "Battaglia Terme"],
+  ["colli euganei", 45.31, 11.69, "Colli Euganei"],
+  ["\\beste\\b", 45.228, 11.656, "Este"],
+  ["viminario", 45.244, 11.819, "San Pietro Viminario"],
+  ["onara", 45.618, 11.82, "Onara"],
+  ["tombolo|t[eé]rgola", 45.638, 11.826, "Tombolo, F. Tergola"],
+  ["fontaniva", 45.636, 11.752, "Fontaniva"],
+  ["camazzole", 45.61, 11.72, "Laghetti di Camazzole"],
+  ["carmign?i?ano|carturo", 45.625, 11.705, "Carmignano di Brenta"],
+  ["torreselle|sile", 45.623, 11.979, "Sorgenti del Sile, Torreselle"],
+  ["villa del conte", 45.585, 11.859, "Villa del Conte"],
+  ["pietro in gu", 45.608, 11.67, "San Pietro in Gu"],
+  ["padova", 45.4064, 11.8768, "Padova"],
+  ["fimon", 45.47, 11.54, "Lago di Fimon"],
+  ["barbar", 45.41, 11.55, "Barbarano, Monte Tondo"],
+  ["villaga|monte tondo|san donato", 45.4, 11.54, "Villaga"],
+  ["cassiano|lumignano", 45.483, 11.598, "Eremo di S. Cassiano"],
+  ["sarego", 45.408, 11.404, "Sarego"],
+  ["orgiano|piume", 45.348, 11.464, "Orgiano"],
+  ["gamborella|germano dei berici", 45.405, 11.47, "San Germano dei Berici"],
+  ["brendola", 45.47, 11.44, "Brendola"],
+  ["sossano", 45.358, 11.513, "Sossano"],
+  ["colli berici", 45.43, 11.54, "Colli Berici"],
+  ["isola vicentina", 45.63, 11.446, "Isola Vicentina"],
+  ["due ville", 45.67, 11.55, "Dueville"],
+  ["s.? urbano", 45.51, 11.4, "Montecchio Maggiore"],
+  ["felicita", 45.8, 11.74, "Valle S. Felicita"],
+  ["ez+elino", 45.78, 11.77, "Romano d'Ezzelino"],
+  ["cartigliano", 45.71, 11.695, "Cartigliano"],
+  ["tesse sul brenta", 45.686, 11.709, "Tezze sul Brenta"],
+  ["godego", 45.695, 11.88, "Castello di Godego"],
+  ["florian|s\\. floriano", 45.755, 11.66, "Marostica, S. Floriano"],
+  ["cr[oa]sara", 45.759, 11.6, "Crosara"],
+  ["le valli|zenone", 45.78, 11.84, "San Zenone"],
+  ["cengio", 45.8, 11.46, "Monte Cengio"],
+  ["lusiana|monte corno", 45.79, 11.57, "Monte Corno, Lusiana"],
+  ["asiago", 45.875, 11.51, "Asiago"],
+  ["rubbio", 45.8, 11.63, "Rubbio"],
+  ["recoaro|passo della lora", 45.67, 11.18, "Passo della Lora"],
+  ["possagno|paderno", 45.845, 11.86, "Possagno"],
+  ["crespano|valderoa|pieve del grappa", 45.826, 11.835, "Crespano del Grappa"],
+  ["grappa", 45.87, 11.8, "Massiccio del Grappa"],
+  ["^casale$", 45.51, 11.58, "Casale (Vicenza)"],
+  ["asolo", 45.8, 11.915, "Asolo"],
+  ["montello", 45.82, 12.15, "Montello"],
+  ["moriago|mo[sn]nigo|monsigno|palù del|palu del|servaglia|sernaglia|quartier", 45.865, 12.11, "Palù di Moriago"],
+  ["pianezze", 45.94, 12.04, "Pianezze, Valdobbiadene"],
+  ["braida|comegl|conmegl|tualis|degano", 46.517, 12.87, "Comeglians, Braida"],
+  ["conegliano", 45.886, 12.297, "Conegliano"],
+  ["cavalier", 45.78, 12.55, "Cavalier"],
+  ["basalghelle", 45.8, 12.52, "Basalghelle"],
+  ["breda di piave", 45.72, 12.33, "Breda di Piave"],
+  ["castagnole", 45.68, 12.2, "Castagnole"],
+  ["castelfranco veneto", 45.672, 11.928, "Castelfranco Veneto"],
+  ["treviso", 45.667, 12.243, "Treviso"],
+  ["cansiglio", 46.06, 12.4, "Cansiglio"],
+  ["passo (di )?valles|valles", 46.338, 11.797, "Passo Valles"],
+  ["val+e?f+redda|flora alpina", 46.379, 11.82, "Valfredda, Falcade"],
+  ["cencenighe", 46.353, 11.97, "Cencenighe"],
+  ["falcade", 46.357, 11.87, "Falcade"],
+  ["gares", 46.315, 11.86, "Val Gares"],
+  ["giau", 46.482, 12.053, "Passo Giau"],
+  ["falzarego", 46.519, 12.008, "Passo Falzarego"],
+  ["cortina", 46.54, 12.135, "Cortina d'Ampezzo"],
+  ["san vito di cadore", 46.457, 12.206, "San Vito di Cadore"],
+  ["visdende", 46.62, 12.64, "Val Visdende"],
+  ["sorgenti (del )?(fiume )?piave|sappada|olbe", 46.62, 12.71, "Sappada, Sorgenti del Piave"],
+  ["pieve di cadore", 46.427, 12.37, "Pieve di Cadore"],
+  ["lagole|calalzo", 46.45, 12.385, "Calalzo, Lagole"],
+  ["lentiai", 46.046, 12.02, "Lentiai"],
+  ["lamosano", 46.16, 12.39, "Lamosano"],
+  ["cellarda|anz", 46.02, 11.93, "Cellarda, Feltre"],
+  ["sospirolo", 46.14, 12.07, "Sospirolo"],
+  ["bianchet|sedico|vescov", 46.23, 12.14, "Rifugio Bianchet, Sedico"],
+  ["alano", 45.908, 11.91, "Alano di Piave"],
+  ["pellegrino|costabella", 46.378, 11.785, "Passo San Pellegrino"],
+  ["pin[eèé](?![a-zà-ÿ])", 46.16, 11.24, "Valle di Piné"],
+  ["calis[ict]o|civezzano", 46.09, 11.16, "Monte Calisio"],
+  ["\\barco\\b|laghel", 45.92, 10.885, "Arco"],
+  ["tovel", 46.261, 10.948, "Lago di Tovel"],
+  ["flavon", 46.3, 11.03, "Flavon"],
+  ["rabbi", 46.41, 10.83, "Val di Rabbi"],
+  ["vermiglio|velon", 46.297, 10.689, "Vermiglio"],
+  ["calamento", 46.13, 11.47, "Val Calamento"],
+  ["rovereto,|sopra rovereto", 45.89, 11.04, "Rovereto"],
+  ["aldino|aldein", 46.365, 11.355, "Aldino"],
+  ["castelvecchio", 46.35, 11.24, "Termeno, Castelvecchio"],
+  ["caldaro", 46.355, 11.245, "Termeno-Caldaro"],
+  ["terme[nm]|tramin", 46.34, 11.24, "Termeno"],
+  ["cortaccia", 46.314, 11.225, "Cortaccia"],
+  ["egna", 46.318, 11.275, "Egna"],
+  ["^montagna", 46.33, 11.3, "Montagna"],
+  ["tirol", 46.69, 11.15, "Tirolo"],
+  ["sluderno", 46.665, 10.585, "Sluderno"],
+  ["siusi", 46.54, 11.56, "Siusi"],
+  ["ovaro|clavais", 46.485, 12.865, "Ovaro"],
+  ["paluzza", 46.532, 13.015, "Paluzza"],
+  ["forni di sotto", 46.395, 12.67, "Forni di Sotto"],
+  ["zoncolan|sutrio", 46.5, 12.93, "Monte Zoncolan"],
+  ["fagagna", 46.11, 13.085, "Fagagna"],
+  ["ragogna|s\\. daniele", 46.17, 12.99, "Lago di Ragogna"],
+  ["flaibano|odorico", 46.058, 12.98, "Flaibano"],
+  ["buia", 46.21, 13.117, "Buia"],
+  ["trasaghis|peonis", 46.26, 13.07, "Peonis, Trasaghis"],
+  ["pulfero", 46.173, 13.482, "Pulfero"],
+  ["tribil", 46.125, 13.55, "Tribil Inferiore"],
+  ["savorgnano", 46.14, 13.29, "Savorgnano"],
+  ["udine", 46.063, 13.235, "Udine"],
+  ["sterpo|virco", 45.885, 13.02, "Sterpo, risorgive"],
+  ["flambruzzo", 45.874, 13.01, "Flambruzzo"],
+  ["castions|cornoglaria|moretto", 45.909, 13.183, "Castions di Strada"],
+  ["gonard?s", 45.896, 13.236, "Gonars"],
+  ["bagnaria|porpetto", 45.88, 13.287, "Bagnaria Arsa"],
+  ["m[ou]zzana|bosco bando|arvonchis", 45.818, 13.13, "Muzzana del Turgnano"],
+  ["carlino", 45.803, 13.188, "Carlino"],
+  ["precenicco|titi?an|fiume stella|risorgive del fiume stella", 45.788, 13.08, "Precenicco"],
+  ["madris", 45.81, 12.98, "Madrisio"],
+  ["cordenons", 45.985, 12.7, "Cordenons, risorgive"],
+  ["vivai?ro|magredi|cellina", 46.077, 12.78, "Magredi del Cellina"],
+  ["ciaurlec", 46.15, 12.85, "Monte Ciaurlec"],
+  ["polcenigo|livenza", 46.035, 12.5, "Polcenigo"],
+  ["rover[ee]t?d?o (in|al) piano|roveredo", 46.01, 12.62, "Roveredo in Piano"],
+  ["sacile|cavolano", 45.954, 12.503, "Sacile"],
+  ["arzino|vito d.asio", 46.27, 12.92, "Valle d'Arzino"],
+  ["monfalcone", 45.805, 13.533, "Monfalcone"],
+  ["opicina|trieste", 45.67, 13.78, "Opicina"],
+  ["duino|miramare", 45.73, 13.65, "Costiera Duino–Miramare"],
+  ["muggia", 45.604, 13.768, "Muggia"],
+  ["carso", 45.74, 13.72, "Carso Triestino"],
+  ["rosolina mare", 45.135, 12.325, "Rosolina Mare"],
+  ["caleri", 45.098, 12.328, "Porto Caleri"],
+  ["ca.? venier", 45.01, 12.44, "Ca' Venier"],
+  ["porto l[eé]vante", 45.045, 12.37, "Porto Levante"],
+  ["scano boa", 44.92, 12.48, "Scano Boa"],
+  ["boccasette", 44.98, 12.46, "Boccasette"],
+  ["dona[dnlo]|contarina|porto vi", 45.045, 12.22, "Dune di Donada"],
+  ["boara pisani", 45.11, 11.783, "Boara Pisani"],
+  ["rovigo", 45.07, 11.79, "Rovigo"],
+  ["prada|zeno di montagna", 45.64, 10.75, "Prada, Monte Baldo"],
+  ["baldo", 45.7, 10.85, "Monte Baldo"],
+  ["rivoli", 45.57, 10.81, "Rivoli Veronese"],
+  ["ceraino", 45.587, 10.84, "Ceraino"],
+  ["belfiore", 45.38, 11.21, "Belfiore"],
+  ["chiesanuova", 45.62, 11.03, "Bosco Chiesanuova"],
+  ["alfaedo", 45.625, 10.95, "Sant'Anna d'Alfaedo"],
+  ["valpolicella", 45.53, 10.9, "Valpolicella"],
+  ["^verona$", 45.438, 10.992, "Verona"],
+  ["^garda$", 45.575, 10.707, "Garda"],
+  ["cima sobretta", 46.4, 10.45, "Cima Sobretta"],
+  ["gavia", 46.344, 10.488, "Passo Gavia"],
+  ["valfurva|sobretta|plaghera", 46.46, 10.44, "Santa Caterina Valfurva"],
+  ["lago moro|darfo|danfr?o|boario", 45.88, 10.19, "Lago Moro, Darfo Boario Terme"],
+  ["gianico|cimosco", 45.87, 10.18, "Monte Cimosco"],
+  ["schilpario", 46.01, 10.156, "Schilpario"],
+  ["zandobbio", 45.68, 9.86, "Zandobbio"],
+  ["iseo", 45.64, 10.04, "Provaglio d'Iseo"],
+  ["sovenigo", 45.56, 10.52, "Laghetti di Sovenigo"],
+  ["pozzolengo|mantellina", 45.4, 10.63, "Palude Mantellina"],
+  ["sirmione", 45.493, 10.608, "Sirmione"],
+  ["gambara", 45.256, 10.294, "Gambara"],
+  ["solferino", 45.37, 10.57, "Barche di Solferino"],
+  ["band[eo]", 45.342, 10.61, "Bande di Cavriana"],
+  ["soave", 45.2, 10.8, "Soave (Porto Mantovano)"],
+  ["menaggio", 46.02, 9.24, "Menaggio"],
+  ["barro", 45.82, 9.38, "Monte Barro"],
+  ["lesa", 45.83, 8.56, "Lesa"],
+  ["cicogna", 45.99, 8.51, "Cicogna"],
+  ["roccamurata|taro|granere", 44.55, 9.9, "Borgo Val di Taro"],
+  ["mesola", 44.86, 12.26, "Gran Bosco della Mesola"],
+  ["borsetti", 44.555, 12.28, "Casal Borsetti"],
+  ["classe", 44.34, 12.35, "Lido di Classe"],
+  ["front[oa]ne|valpiana|acuto|bocca della valle", 43.51, 12.74, "Frontone, Monte Acuto"],
+  ["cantiano|tecchie", 43.47, 12.63, "Cantiano"],
+  ["mercatino", 43.87, 12.49, "Mercatino Conca"],
+  ["conero", 43.55, 13.6, "Monte Conero"],
+  ["gola della rossa", 43.46, 13.01, "Gola della Rossa"],
+  ["matelica", 43.256, 13.009, "Matelica"],
+  ["^ancona$", 43.615, 13.518, "Ancona"],
+  ["bagno vignoni", 43.027, 11.619, "Bagno Vignoni"],
+  ["orcia|biancane", 43.06, 11.6, "Val d'Orcia"],
+  ["formone", 42.95, 11.66, "Torrente Formone"],
+  ["siena|travertiri", 43.319, 11.33, "Siena"],
+  ["orvieto", 42.718, 12.11, "Orvieto"],
+  ["circeo", 41.25, 13.05, "Parco del Circeo"],
+  ["gran sasso|imperatore", 42.443, 13.558, "Campo Imperatore"],
+  ["pezza", 42.19, 13.45, "Piano di Pezza"],
+  ["pescasseroli", 41.807, 13.788, "Pescasseroli"],
+  ["montedimero", 41.6, 14.23, "Isernia"],
+  ["maratea|matera", 39.99, 15.72, "Maratea"],
+  ["^lecce$", 40.352, 18.17, "Lecce"],
+  ["andrano", 39.98, 18.4, "Andrano"],
+  ["castro|cesarea", 40.035, 18.42, "Castro – S. Cesarea"],
+  ["lipari", 38.47, 14.95, "Lipari"],
+  ["orosei", 40.378, 9.693, "Orosei"],
+  ["stintino", 40.94, 8.22, "Stintino"],
+  ["manara|sestri", 44.265, 9.39, "Punta Manara"],
+  ["pigna", 43.933, 7.662, "Pigna"],
+  ["san remo", 43.817, 7.776, "Sanremo"],
+  ["buljarica", 42.195, 18.96, "Buljarica (MNE)"],
+  ["pinguente|istria", 45.409, 13.966, "Pinguente/Buzet (HR)"],
+  ["krakovski|novo mest|podlog", 45.86, 15.35, "Krakovski gozd (SLO)"],
+  ["mokrice|podbocj", 45.87, 15.66, "Mokrice (SLO)"],
+  ["mep+en", 52.69, 7.29, "Meppen (DE)"],
+  ["nordeney|norderney", 53.707, 7.147, "Norderney (DE)"],
+  ["kent", 51.2, 0.7, "Kent (UK)"]
+];
+const PROV={
+  "VE":[45.52, 12.4, "Venezia"],
+  "PD":[45.35, 11.85, "Padova"],
+  "BL":[46.3, 12.1, "Belluno"],
+  "VI":[45.65, 11.5, "Vicenza"],
+  "UD":[46.15, 13.1, "Udine"],
+  "SO":[46.3, 9.9, "Sondrio"],
+  "TV":[45.8, 12.2, "Treviso"],
+  "BZ":[46.65, 11.4, "Bolzano"],
+  "PN":[46.05, 12.7, "Pordenone"],
+  "RO":[45.05, 11.9, "Rovigo"],
+  "TN":[46.1, 11.1, "Trento"],
+  "VR":[45.45, 11.0, "Verona"],
+  "BS":[45.7, 10.3, "Brescia"],
+  "MN":[45.15, 10.8, "Mantova"],
+  "SI":[43.2, 11.4, "Siena"],
+  "ME":[38.2, 15.2, "Messina"],
+  "PS":[43.7, 12.6, "Pesaro e Urbino"],
+  "PU":[43.7, 12.6, "Pesaro e Urbino"],
+  "PZ":[40.5, 15.9, "Potenza"],
+  "PR":[44.6, 10.0, "Parma"],
+  "TS":[45.7, 13.8, "Trieste"],
+  "GO":[45.95, 13.55, "Gorizia"],
+  "AN":[43.5, 13.2, "Ancona"],
+  "AQ":[42.2, 13.6, "L'Aquila"],
+  "LE":[40.2, 18.2, "Lecce"],
+  "GE":[44.4, 9.1, "Genova"],
+  "BG":[45.8, 9.8, "Bergamo"],
+  "LT":[41.4, 13.1, "Latina"],
+  "FE":[44.8, 11.8, "Ferrara"],
+  "CO":[45.9, 9.1, "Como"],
+  "SS":[40.8, 8.6, "Sassari"],
+  "NO":[45.6, 8.6, "Novara"],
+  "IM":[43.9, 7.8, "Imperia"],
+  "RA":[44.4, 12.0, "Ravenna"],
+  "TR":[42.6, 12.4, "Terni"],
+  "IS":[41.6, 14.2, "Isernia"],
+  "VB":[46.1, 8.3, "Verbano-Cusio-Ossola"],
+  "NU":[40.3, 9.3, "Nuoro"],
+  "PV":[45.1, 9.1, "Pavia"]
+};
+const STATE={
+  "IT":[42.8, 12.5, "Italia"],
+  "SI":[46.1, 14.8, "Slovenia"],
+  "MNE":[42.7, 19.3, "Montenegro"],
+  "DE":[51.2, 10.4, "Germania"],
+  "HR":[45.1, 15.2, "Croazia"],
+  "UK":[52.5, -1.5, "Regno Unito"]
+};
+
+// ---------- lingue ----------
+const I18N={
+it:{
+  locale:'it-IT', htmlLang:'it', otherLang:'EN', otherLangTitle:'Switch to English',
+  title:'Herbarium', subtitle:"Campioni d'erbario geolocalizzati per sito di raccolta · DAIS, Ca' Foscari University of Venice",
+  newRec:'+ Nuovo campione', search:'Cerca', searchPh:'Specie, genere, famiglia, località, raccoglitore…',
+  family:'Famiglia', legit:'Legit', box:'Scatola', year:'Anno di raccolta', from:'Dal', to:'Al',
+  precision:'Precisione della posizione', pGps:'GPS', pLoc:'Località', pProv:'Provincia', pStato:'Stato',
+  onlyPhoto:'Solo campioni con foto', reset:'Azzera filtri', reload:'Aggiorna dati dal foglio',
+  mapAria:'Mappa dei siti di raccolta', fitAll:'Tutti i punti', fitNE:'Nord-Est', layers:'Sfondo',
+  areaSelect:'Seleziona area', areaCancel:'Annulla selezione', areaClear:'Rimuovi area', areaHint:'Trascina sulla mappa per delimitare l’area.',
+  lgGps:'Posizione GPS', lgLoc:'Località riconosciuta', lgProv:'Centro della provincia', lgStato:'Centro dello Stato', lgSize:'Area del cerchio ∝ numero di campioni',
+  baseRoad:'Stradale (OpenStreetMap)', baseTopo:'Rilievo e isoipse (Esri)', contoursZoom:'Ingrandisci la mappa per vedere le isoipse (da zoom 11).', contoursUnavailable:'Isoipse non disponibili: controlla la connessione. Il rilievo resta visibile.', terrainUnavailable:'Colori altimetrici non disponibili: controlla la connessione.', elevationLoading:'Carico la quota stimata…', elevationValue:n=>'Quota del terreno stimata: '+n+' m', elevationSource:'Modello Copernicus GLO-90 (90 m), via Open-Meteo; quota approssimativa del punto, non misurata sul campione.', elevationError:'Quota non disponibile per questo punto. Riprova più tardi.', baseSat:'Satellite (Esri)', imgCredit:'Immagini',
+  all_f:'Tutte', all_m:'Tutti',
+  precNote:{gps:'Posizione registrata con GPS al momento della raccolta.',loc:'Posizione della località indicata sul cartellino (approssimata).',prov:'Località non riconosciuta: il punto è al centro della provincia. Puoi correggerla nel foglio "Luoghi".',stato:'Località e provincia assenti: il punto è al centro dello Stato. Puoi correggerla nel foglio "Luoghi".'},
+  gpsPlace:'Posizione GPS', provinceOf:'Provincia di ',
+  states:{IT:'Italia',SI:'Slovenia',MNE:'Montenegro',DE:'Germania',HR:'Croazia',UK:'Regno Unito'},
+  specimens:'campioni', species:'specie', sites:'siti', withPhoto:'con foto',
+  remove:'Rimuovi', dateNA:'data n.d.', legUnknown:'legit ignoto', linkedPhotos:'Foto collegate', photos:'foto', boxShort:'sc.',
+  lFamily:'Famiglia', lSite:'Sito', lProvState:'Prov. / Stato', lDate:'Data', lLegit:'Legit', lDet:'Determinavit', lGeo:'Geolocalizzato',
+  lNote:'Note', lIns:'Inserito', lMod:'Modificato', lRow:'Riga nel foglio',
+  aSearch:'Cerca foto nelle banche dati', aEdit:'Modifica', aUpload:'Carica foto', aClone:'Nuovo campione come questo',
+  allSites:'← Tutti i siti', labels:'Diciture sui cartellini', specList:'Campioni', showMore:'Mostra altri', showMoreSites:'Mostra altri siti',
+  topFam:'Famiglie più rappresentate', siteList:'Siti di raccolta',
+  noMatch:"Nessun campione corrisponde ai filtri. Prova ad allargare l'intervallo di anni o ad azzerare i filtri.",
+  badImage:'Formato immagine non leggibile dal browser', uploading:(k,n)=>'Carico la foto '+k+' di '+n+'…',
+  searching:n=>'Cerco immagini di <i>'+n+'</i> in iNaturalist, GBIF e Wikimedia Commons…',
+  srcDown:'Fonti non raggiungibili: ', noSource:'Nessuna banca dati ha risposto. Controlla che lo script sia autorizzato a connettersi a servizi esterni.',
+  noImages:'Nessuna immagine trovata per questo nome. Se il nome è una sinonimia storica, prova a cercare il nome accettato.',
+  found:n=>n+' immagini trovate', close:'Chiudi', alreadyLinked:'Già collegata', linkIt:'Collega al campione', linking:'Collego…', linked:'Collegata',
+  extNote:"Le immagini restano sui siti d'origine: vengono salvati solo il link e i crediti. Controlla la licenza prima di riutilizzarle.",
+  searchFail:'Ricerca non riuscita: ', photosLinked:(n,s)=>n+' foto collegate a '+s+'.', photoUnlinked:'Foto scollegata dal campione.', opFail:'Operazione non riuscita: ',
+  fEdit:'Modifica campione', fCloneOf:s=>'Nuovo campione come “'+s+'”', fNew:'Nuovo campione',
+  fIntroEdit:r=>'Riga '+r+' del foglio. Le foto già collegate e i dati di inserimento non cambiano.',
+  fIntroNew:'I campi con * sono obbligatori. Il campione viene aggiunto in fondo al foglio.',
+  fTaxon:'Taxon', fGenus:'Genere *', fSpecies:'Specie *', fAuthor:'Autore',
+  fCollection:'Raccolta', fSite:'Sito di raccolta', fSitePh:'es. Valle S. Felicita, Bassano del Grappa', fProv:'Provincia', fState:'Stato', fDate:'Data', fDatePh:'gg.mm.aaaa',
+  fGps:'Posizione GPS', fLat:'Latitudine', fLon:'Longitudine', fAcc:'Precisione (m)', fGeo:'Usa la mia posizione', fPick:'Scegli sulla mappa', fPicking:'Clicca sulla mappa…', fClear:'Cancella',
+  fGpsHint:'Se aggiungi una foto scattata con il GPS attivo, la posizione viene letta dalla foto.',
+  fAddPhotos:'Aggiungi foto', fPhotos:'Foto', fCam:'Scatta foto', fGallery:'Scegli dalla galleria', fTake:'Togli',
+  fSaveEdit:'Salva modifiche', fSaveNew:'Salva campione', fCancel:'Annulla', fSaving:'Salvataggio…',
+  hintPresent:n=>"Già presente nell'erbario: "+n+' campioni.', hintNewSp:"Specie nuova per l'erbario.", hintNewGen:"Genere nuovo per l'erbario: controlla l'ortografia.",
+  posSet:s=>'Posizione impostata '+s+'.', srcDevice:'dal GPS del dispositivo', srcMap:'dalla mappa', srcPhoto:'dai dati GPS della foto',
+  noGeo:'Questo browser non fornisce la posizione.', locating:'Rilevo la posizione…',
+  geoFail:denied=>'Posizione non disponibile ('+(denied?'permesso negato: questa pagina potrebbe non poter chiedere la posizione':'segnale assente')+'). Inserisci le coordinate, sceglile sulla mappa o aggiungi una foto con GPS.',
+  gpsCleared:'Posizione GPS cancellata.', photoNotAdded:'Foto non aggiunta: ',
+  needTaxon:'indica genere e specie', needSite:'indica il sito di raccolta oppure la posizione GPS', badCoords:'controlla latitudine e longitudine', toSave:'Per salvare: ',
+  photoFailAfterSave:(E,row,m)=>(E?'Modifiche salvate':'Campione salvato')+' alla riga '+row+', ma le foto non sono state caricate ('+m+').'+(E?'':' Non salvarlo di nuovo.')+' Aggiungi le foto dalla sua scheda con "Carica foto".',
+  saved:(E,row,n)=>(E?'Modifiche salvate':'Salvato')+' alla riga '+row+(n?' con '+n+' foto':'')+'.', saveFail:'Salvataggio non riuscito: ',
+  outside:"Errore di connessione alle API.",
+  loading:'Caricamento dei dati dal foglio…', readAt:'letto alle',
+  signIn:'Accedi per modificare', signInT:'Modalità Editor', rolePub:'Pubblico',
+  roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio: puoi inserire e modificare campioni', roleROt:'puoi solo consultare i dati',
+  oldCode:"Versione codice non aggiornata.",
+  noAccess:'<b>Non hai accesso a questo erbario.</b><br>Controlla che il foglio Google sia accessibile.',
+  detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere i dati: '+m,
+  fatalLeaflet:'La libreria della mappa (Leaflet) non si è caricata.',
+  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto! Modalità Editing attivata.', pinErr:'PIN errato. Riprova.',
+  pinExit:'Modalità pubblica ripristinata.'
+},
+en:{
+  locale:'en-GB', htmlLang:'en', otherLang:'IT', otherLangTitle:'Passa all’italiano',
+  title:'Herbarium', subtitle:"Herbarium specimens mapped by collection site · DAIS, Ca' Foscari University of Venice",
+  newRec:'+ New specimen', search:'Search', searchPh:'Species, genus, family, locality, collector…',
+  family:'Family', legit:'Collector (legit)', box:'Box', year:'Collection year', from:'From', to:'To',
+  precision:'Location precision', pGps:'GPS', pLoc:'Locality', pProv:'Province', pStato:'Country',
+  onlyPhoto:'Only specimens with photos', reset:'Clear filters', reload:'Reload data from sheet',
+  mapAria:'Map of collection sites', fitAll:'All points', fitNE:'North-East Italy', layers:'Base map',
+  areaSelect:'Select area', areaCancel:'Cancel selection', areaClear:'Clear area', areaHint:'Drag on the map to draw an area.',
+  lgGps:'GPS position', lgLoc:'Recognised locality', lgProv:'Province centre', lgStato:'Country centre', lgSize:'Circle area ∝ number of specimens',
+  baseRoad:'Streets (OpenStreetMap)', baseTopo:'Relief and contours (Esri)', contoursZoom:'Zoom in to see contour lines.', contoursUnavailable:'Contours unavailable.', terrainUnavailable:'Elevation colours unavailable.', elevationLoading:'Loading estimated elevation…', elevationValue:n=>'Estimated terrain elevation: '+n+' m', elevationSource:'Copernicus GLO-90 DEM', elevationError:'Elevation unavailable.', baseSat:'Satellite (Esri)', imgCredit:'Imagery',
+  all_f:'All', all_m:'All',
+  precNote:{gps:'Position recorded by GPS.',loc:'Position written on label.',prov:'Province centre.',stato:'Country centre.'},
+  gpsPlace:'GPS position', provinceOf:'Province of ',
+  states:{IT:'Italy',SI:'Slovenia',MNE:'Montenegro',DE:'Germany',HR:'Croatia',UK:'United Kingdom'},
+  specimens:'specimens', species:'species', sites:'sites', withPhoto:'with photos',
+  remove:'Remove', dateNA:'no date', legUnknown:'collector unknown', linkedPhotos:'Linked photos', photos:'photos', boxShort:'box',
+  lFamily:'Family', lSite:'Site', lProvState:'Prov. / Country', lDate:'Date', lLegit:'Collector', lDet:'Identified by', lGeo:'Mapped at',
+  lNote:'Notes', lIns:'Added', lMod:'Edited', lRow:'Sheet row',
+  aSearch:'Find photos', aEdit:'Edit', aUpload:'Upload photo', aClone:'New specimen like this',
+  allSites:'← All sites', labels:'Label wording', specList:'Specimens', showMore:'Show', showMoreSites:'Show more sites',
+  topFam:'Most represented families', siteList:'Collection sites',
+  noMatch:'No specimens match the filters.',
+  badImage:'Invalid image format', uploading:(k,n)=>'Uploading photo '+k+' of '+n+'…',
+  searching:n=>'Searching for <i>'+n+'</i>…',
+  srcDown:'Sources unreachable: ', noSource:'No database answered.',
+  noImages:'No images found.',
+  found:n=>n+' images found', close:'Close', alreadyLinked:'Already linked', linkIt:'Link to specimen', linking:'Linking…', linked:'Linked',
+  extNote:'Images stay on original sites.',
+  searchFail:'Search failed: ', photosLinked:(n,s)=>n+' photos linked to '+s+'.', photoUnlinked:'Photo unlinked.', opFail:'Action failed: ',
+  fEdit:'Edit specimen', fCloneOf:s=>'New specimen like “'+s+'”', fNew:'New specimen',
+  fIntroEdit:r=>'Sheet row '+r+'.',
+  fIntroNew:'Fields marked * are required.',
+  fTaxon:'Taxon', fGenus:'Genus *', fSpecies:'Species *', fAuthor:'Author',
+  fCollection:'Collection', fSite:'Collection site', fSitePh:'e.g. Valle S. Felicita', fProv:'Province', fState:'Country', fDate:'Date', fDatePh:'dd.mm.yyyy',
+  fGps:'GPS position', fLat:'Latitude', fLon:'Longitude', fAcc:'Accuracy (m)', fGeo:'Use my location', fPick:'Pick on map', fPicking:'Click on map…', fClear:'Clear',
+  fGpsHint:'Position from photo EXIF if available.',
+  fAddPhotos:'Add photos', fPhotos:'Photos', fCam:'Take photo', fGallery:'Choose from gallery', fTake:'Remove',
+  fSaveEdit:'Save changes', fSaveNew:'Save specimen', fCancel:'Cancel', fSaving:'Saving…',
+  hintPresent:n=>'Already in herbarium: '+n+' specimens.', hintNewSp:'New species.', hintNewGen:'New genus.',
+  posSet:s=>'Position set '+s+'.', srcDevice:'from device', srcMap:'from map', srcPhoto:'from photo',
+  noGeo:'Geolocation not available.', locating:'Locating…',
+  geoFail:denied=>'Location error.',
+  gpsCleared:'GPS cleared.', photoNotAdded:'Photo error: ',
+  needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ',
+  photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
+  saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ',
+  outside:'Connection error.',
+  loading:'Loading data…', readAt:'read at',
+  signIn:'Sign in', signInT:'Editor mode', rolePub:'Public',
+  roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only',
+  oldCode:'Code outdated.',
+  noAccess:'<b>No access.</b>',
+  detail:'Details: ', readFail:m=>'Cannot read: '+m,
+  fatalLeaflet:'Map library failed.',
+  pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'PIN correct!', pinErr:'Incorrect PIN.',
+  pinExit:'Public mode.'
+}};
+let LANG=(function(){ try{ const s=localStorage.getItem('erbario.lang'); if(s==='it'||s==='en') return s; }catch(e){} return /^it/i.test(navigator.language||'it')?'it':'en'; })();
+const T=(k,...a)=>{ const v=(I18N[LANG]&&I18N[LANG][k]!==undefined)?I18N[LANG][k]:I18N.it[k]; return typeof v==='function'?v(...a):v; };
+function applyStatic(){
+  document.documentElement.lang=T('htmlLang'); document.title=T('title');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=T(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder=T(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>{ el.setAttribute('aria-label',T(el.dataset.i18nAria)); });
+  const lb=document.getElementById('langBtn'); if(lb){ lb.textContent=T('otherLang'); lb.title=T('otherLangTitle'); lb.setAttribute('aria-label',T('otherLangTitle')); }
+}
+applyStatic();
+
+const recs = [];
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css = n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = n=>n.toLocaleString(T('locale'));
+const norm = s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const PREC_KEY = {gps:'pGps',loc:'pLoc',prov:'pProv',stato:'pStato'};
+const PL = p=>T(PREC_KEY[p]);
+const PN = p=>T('precNote')[p];
+let LAST_DATA=null;
+const GAZ_RX = GAZ.map(([p,la,lo,n])=>[new RegExp(p,'i'),la,lo,n]);
+let USER='', CAN_EDIT=false;
+
+// ---------- parsing del foglio ----------
+function colIndex(header){
+  const h = header.map(x=>norm(x).trim());
+  const exact = k=>h.indexOf(k);
+  const find = (...keys)=>{for(const k of keys){const i=exact(k);if(i>=0)return i}for(const k of keys){const i=h.findIndex(x=>x.includes(k));if(i>=0)return i}return -1};
+  return {id:exact('id'),box:find('nr scatola','scatola'),fam:exact('famiglia'),gen:exact('genere'),sp:exact('specie'),full:exact('genere e specie'),
+    aut:exact('autore'),site:find('sito di raccolta','sito','localita'),prov:exact('provincia'),st:exact('stato'),date:exact('data'),
+    leg:exact('legit'),det:exact('determinavit'),note:exact('note'),
+    gpsLat:exact('latitudine gps'),gpsLon:exact('longitudine gps'),gpsAcc:exact('precisione gps (m)'),
+    photos:exact('foto'),insBy:exact('inserito da'),insAt:exact('inserito il'),modBy:exact('modificato da'),modAt:exact('modificato il'), header:h};
+}
+const num = v=>{const x=parseFloat(String(v??'').replace(',','.'));return isFinite(x)?x:null};
+function geocode(site, prov, st, custom, gLat, gLon){
+  if(gLat!=null && gLon!=null && Math.abs(gLat)<=90 && Math.abs(gLon)<=180)
+    return {lat:gLat,lon:gLon,place:(site||T('gpsPlace')),prec:'gps'};
+  const s = site.replace(/[’‘]/g,"'").replace(/\s+/g,' ').trim();
+  const ls = s.toLowerCase();
+  for(const c of custom){ if(ls.includes(c.text.toLowerCase())) return {lat:c.lat,lon:c.lon,place:c.name,prec:'loc'}; }
+  for(const [rx,lat,lon,place] of GAZ_RX){ if(rx.test(s)) return {lat,lon,place,prec:'loc'}; }
+  if(PROV[prov]) return {lat:PROV[prov][0],lon:PROV[prov][1],place:T('provinceOf')+PROV[prov][2],prec:'prov'};
+  const code = STATE[st]?st:'IT', S = STATE[code];
+  return {lat:S[0],lon:S[1],place:(T('states')[code]||S[2]),prec:'stato'};
+}
+function driveId(u){ const m=String(u).match(/\/d\/([\w-]{20,})|[?&]id=([\w-]{20,})/); return m?(m[1]||m[2]):null; }
+function parsePhotos(cell){
+  return String(cell||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const [img,credit,page]=l.split(' | ').map(x=>(x||'').trim());
+    const id=driveId(img);
+    return {img, credit:credit||'', page:page||img, id, thumb:id?('https://drive.google.com/thumbnail?id='+id+'&sz=w480'):img, own:!!id};
+  }).filter(p=>p.img.indexOf('https:')===0);
+}
+function parse(data){
+  const c = colIndex(data.header);
+  const get=(r,i)=>i>=0&&r[i]!=null?String(r[i]).trim():'';
+  const noteCols=[]; if(c.note>=0){ noteCols.push(c.note); for(let k=c.note+1;k<c.header.length&&!c.header[k];k++) noteCols.push(k); }
+  recs.length=0;
+  data.rows.forEach((r,i)=>{
+    let prov=get(r,c.prov).toUpperCase(); if(prov==='UR') prov='VR'; if(prov==='?') prov='';
+    let st=get(r,c.st).toUpperCase(); if(st==='IR') st='IT';
+    const gen=get(r,c.gen), sp=get(r,c.sp);
+    let name = gen&&sp ? gen+' '+sp : get(r,c.full);
+    name = name.replace(/\s+/g,' ').trim(); if(name) name=name[0].toUpperCase()+name.slice(1).toLowerCase();
+    const date=get(r,c.date);
+    const ym=date.match(/(19[5-9]\d|20[0-9]\d)/);
+    const dm=date.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+    const iso = dm && +dm[2]>=1 && +dm[2]<=12 ? `${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}` : '';
+    const site=get(r,c.site).replace(/\s+/g,' ');
+    const gLat=num(get(r,c.gpsLat)), gLon=num(get(r,c.gpsLon));
+    const gpsTxt=[get(r,c.gpsLat),get(r,c.gpsLon)].filter(s=>s&&num(s)==null);
+    const g=geocode(site,prov,st,data.places||[],gLat,gLon);
+    const note = noteCols.map(k=>get(r,k)).concat(gpsTxt).filter(Boolean).join(' · ');
+    const rec={i,row:(data.rowNums&&data.rowNums[i])||i+2,id:get(r,c.id),box:get(r,c.box),fam:get(r,c.fam),gen,sp,name,aut:get(r,c.aut),site,prov,st,date,iso,year:ym?+ym[1]:null,
+      leg:get(r,c.leg),det:get(r,c.det),note,lat:g.lat,lon:g.lon,place:g.place,prec:g.prec,
+      gpsLat:gLat,gpsLon:gLon,gpsAcc:num(get(r,c.gpsAcc)),photos:parsePhotos(get(r,c.photos)),insBy:get(r,c.insBy),insAt:get(r,c.insAt),modBy:get(r,c.modBy),modAt:get(r,c.modAt)};
+    rec.key=g.prec==='gps' ? rec.lat.toFixed(5)+','+rec.lon.toFixed(5) : rec.lat+','+rec.lon;
+    rec.hay=norm([rec.fam,rec.name,rec.site,rec.place,rec.leg,rec.det,rec.prov].join(' '));
+    recs.push(rec);
+  });
+}
+
+// ---------- controlli ----------
+let YMIN=1900, YMAX=2100;
+function fillSelect(el, values, allLabel){
+  const cur=el.value;
+  el.innerHTML='<option value="">'+allLabel+'</option>'+values.map(([v,n])=>`<option value="${esc(v)}">${esc(v)} (${n})</option>`).join('');
+  if([...el.options].some(o=>o.value===cur)) el.value=cur;
+}
+function counts(key){const m=new Map();recs.forEach(r=>{const v=r[key];if(v===''||v==null||v==='?')return;m.set(v,(m.get(v)||0)+1)});return m}
+function setupControls(){
+  fillSelect($('#fam'),[...counts('fam')].sort((a,b)=>a[0].localeCompare(b[0])),T('all_f'));
+  fillSelect($('#leg'),[...counts('leg')].sort((a,b)=>b[1]-a[1]),T('all_m'));
+  fillSelect($('#box'),[...counts('box')].sort((a,b)=>(+a[0]||0)-(+b[0]||0)),T('all_f'));
+  const years=recs.map(r=>r.year).filter(Boolean);
+  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0\vert{}\vert{}+$('#y1').value!==y1;
+  YMIN=years.length?Math.min(...years):1900; YMAX=years.length?Math.max(...years):2100;
+  if(!keep||!$('#y0').value){ $('#y0').value=YMIN; $('#y1').value=YMAX; }
+  $('#y0').min=$('#y1').min=YMIN; $('#y0').max=$('#y1').max=YMAX;
+}
+let selected=null, listLimit=200, openRow=null, mode='browse';
+let areaBounds=null, areaDrawing=false, suppressAreaClick=false;
+function refreshAreaControls(){
+  $('#areaSelect').textContent=T(areaDrawing?'areaCancel':'areaSelect');
+  $('#areaSelect').setAttribute('aria-pressed',String(areaDrawing));
+  $('#areaSelect').disabled=mode==='form'||!window.L;
+  $('#areaClear').hidden=!areaBounds||mode==='form';
+}
+function cancelAreaSelection(){
+  if(!areaDrawing) return;
+  areaDrawing=false; M.areaMode(false); refreshAreaControls();
+}
+function finishAreaSelection(bounds){
+  areaBounds=bounds; cancelAreaSelection(); M.showArea(bounds);
+  selected=null; openRow=null; listLimit=200; update(false);
+}
+function filtered(){
+  const terms=norm($('#q').value.trim()).split(/\s+/).filter(Boolean);
+  const fam=$('#fam').value, leg=$('#leg').value, box=$('#box').value;
+  const y0=+$('#y0').value\vert{}\vert{}YMIN, y1=+$('#y1').value||YMAX;
+  const yF=y0>YMIN||y1<YMAX;
+  const pOk={gps:$('#p-gps').checked,loc:$('#p-loc').checked,prov:$('#p-prov').checked,stato:$('#p-stato').checked};
+  const onlyPh=$('#p-photo').checked;
+  return recs.filter(r=>{
+    if(areaBounds&&!areaBounds.contains([r.lat,r.lon]))return false;
+    if(!pOk[r.prec])return false;
+    if(onlyPh&&!r.photos.length)return false;
+    if(fam&&r.fam!==fam)return false;
+    if(leg&&r.leg!==leg)return false;
+    if(box&&String(r.box)!==box)return false;
+    if(yF&&(!r.year||r.year<y0||r.year>y1))return false;
+    for(const t of terms) if(!r.hay.includes(t)) return false;
+    return true;
+  });
+}
+
+// ---------- mappa ----------
+const dark = window.matchMedia('(prefers-color-scheme: dark)');
+const NE_PTS=[[44.9,10.2],[46.8,13.9]];
+let M=null, lastGroups=[];
+const radiusOf=n=>3.2+Math.sqrt(n)*1.9;
+const tipHtml=e=>'<div><b>'+esc(e.place)+'</b><br>'+fmt(e.n)+' '+T('specimens')+' · '+e.species.size+' '+T('species')+(e.ph?' · '+e.ph+' '+T('withPhoto'):'')+'</div>';
+function groupsFrom(list){
+  const g=new Map();
+  list.forEach(r=>{let e=g.get(r.key);if(!e){e={key:r.key,lat:r.lat,lon:r.lon,place:r.place,prec:r.prec,n:0,ph:0,species:new Set()};g.set(r.key,e)}e.n++;if(r.photos.length)e.ph++;e.species.add(r.name)});
+  return [...g.values()].sort((a,b)=>b.n-a.n);
+}
+function drawPoints(list){ lastGroups=groupsFrom(list); if(M) M.draw(lastGroups); }
+function mapFit(pts,maxZoom){ if(M&&pts.length) M.fit(pts,maxZoom); }
+function mapFitNE(){ mapFit(NE_PTS); }
+function mapFly(lat,lon,z){ if(M) M.fly(lat,lon,z); }
+
+function leafletEngine(){
+  const map=L.map('map',{preferCanvas:true,minZoom:3,maxZoom:19});
+  const OSM_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>';
+  const ESRI_IMAGERY_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>';
+  const ESRI_HILLSHADE_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>';
+  const terrainStops=[[-500,[154,187,202]],[-1,[181,209,216]],[0,[202,215,203]],[100,[198,215,180]],[300,[176,204,159]],[700,[197,207,160]],[1400,[210,194,159]],[2400,[199,171,157]],[4000,[215,203,194]],[8000,[238,232,223]]];
+  const colorTable=new Uint8Array(65536*3);
+  for(let index=0;index<65536;index++){
+    const h=index-1000; let upper=1;
+    while(upper<terrainStops.length-1&&h>terrainStops[upper][0])upper++;
+    const lower=upper-1, a=terrainStops[lower], b=terrainStops[upper];
+    const f=Math.max(0,Math.min(1,(h-a[0])/(b[0]-a[0])));
+    for(let k=0;k<3;k++)colorTable[index*3+k]=Math.round(a[1][k]+(b[1][k]-a[1][k])*f);
+  }
+  const coloredTiles=new Map(), tileCacheLimit=64, sourceImages=new Map(), sourceCacheLimit=48;
+  const sourceUrl=coords=>'https://elevation-tiles-prod.s3.amazonaws.com/terrarium/'+coords.z+'/'+coords.x+'/'+coords.y+'.png';
+  function sourceImage(key,coords){
+    if(sourceImages.has(key)){
+      const image=sourceImages.get(key);
+      sourceImages.delete(key);sourceImages.set(key,image);
+      return image;
+    }
+    const image=new Image();image.crossOrigin='anonymous';
+    sourceImages.set(key,image);
+    if(sourceImages.size>sourceCacheLimit)sourceImages.delete(sourceImages.keys().next().value);
+    image.src=sourceUrl(coords);
+    return image;
+  }
+  const TerrainColors=L.GridLayer.extend({
+    createTile(coords,done){
+      const tile=document.createElement('canvas');tile.width=tile.height=256;
+      const key=coords.z+'/'+coords.x+'/'+coords.y;
+      if(coloredTiles.has(key)){
+        const previous=coloredTiles.get(key);
+        coloredTiles.delete(key);coloredTiles.set(key,previous);
+        tile.getContext('2d').drawImage(previous,0,0);
+        setTimeout(()=>done(null,tile),0);
+        return tile;
+      }
+      const img=sourceImage(key,coords);
+      let finished=false;
+      const render=()=>{
+        if(finished)return;
+        finished=true;
+        try{
+          const ctx=tile.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,256,256);
+          const image=ctx.getImageData(0,0,256,256), rgba=image.data;
+          for(let i=0;i<rgba.length;i+=4){
+            const h=rgba[i]*256+rgba[i+1]+rgba[i+2]/256-32768;
+            const c=3*Math.max(0,Math.min(65535,Math.round(h+1000)));
+            rgba[i]=colorTable[c];rgba[i+1]=colorTable[c+1];rgba[i+2]=colorTable[c+2];rgba[i+3]=255;
+          }
+          ctx.putImageData(image,0,0);
+          coloredTiles.set(key,tile);
+          if(coloredTiles.size>tileCacheLimit)coloredTiles.delete(coloredTiles.keys().next().value);
+          done(null,tile);
+        }catch(error){done(error,tile)}
+      };
+      const fail=()=>{if(!finished){finished=true;done(new Error('Terrain tile unavailable'),tile)}};
+      if(img.complete){
+        if(img.naturalWidth)setTimeout(render,0);else setTimeout(fail,0);
+      }else{
+        img.addEventListener('load',render,{once:true});
+        img.addEventListener('error',fail,{once:true});
+      }
+      return tile;
+    }
+  });
+  const terrainColors=new TerrainColors({maxZoom:19,maxNativeZoom:11,zIndex:1});
+  const relief=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:16,zIndex:2,className:'basemap-topo',attribution:ESRI_HILLSHADE_ATTR});
+  const contoursAvailable=!!(L.esri&&L.esri.Vector&&L.esri.Vector.vectorTileLayer);
+  const contourPane=map.createPane('contourPane'); contourPane.style.zIndex='350'; contourPane.style.pointerEvents='none';
+  const contours=contoursAvailable?L.esri.Vector.vectorTileLayer('51ca3ce6a16d4080ad955dacd6dd2fe2',{pane:'contourPane',style:style=>{style.layers=style.layers.filter(item=>item.type==='line'||item.type==='symbol');return style}}):null;
+  const topo=L.layerGroup(contours?[terrainColors,relief,contours]:[terrainColors,relief]);
+  const TILES={
+    road:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:OSM_ATTR}),
+    topo,
+    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_IMAGERY_ATTR})
+  };
+  TILES.road.addTo(map);
+  const contourNotice=$('#contourNotice');
+  let contourFailure=!contoursAvailable, terrainFailure=false;
+  function updateContourNotice(){
+    const active=map.hasLayer(topo), message=!active?'':terrainFailure?T('terrainUnavailable'):contourFailure?T('contoursUnavailable'):map.getZoom()<11?T('contoursZoom'):'';
+    contourNotice.textContent=message; contourNotice.hidden=!message;
+  }
+  if(contours) contours.on('error',()=>{contourFailure=true;updateContourNotice()});
+  terrainColors.on('tileerror',()=>{terrainFailure=true;updateContourNotice()});
+  map.on('baselayerchange zoomend',updateContourNotice);
+  map.on('baselayerchange',()=>{
+    map.getContainer().classList.toggle('relief-active',map.hasLayer(topo));
+    if(M)M.draw(lastGroups);
+  });
+  updateContourNotice();
+  let layerCtl=null;
+  const buildLayers=()=>{
+    if(layerCtl) layerCtl.remove();
+    const b={}; b[T('baseRoad')]=TILES.road; b[T('baseTopo')]=TILES.topo; b[T('baseSat')]=TILES.sat;
+    layerCtl=L.control.layers(b,null,{position:'topleft'}).addTo(map);
+    const tg=layerCtl.getContainer().querySelector('.leaflet-control-layers-toggle'); if(tg){ tg.setAttribute('data-label',T('layers')); tg.title=T('layers'); }
+  };
+  buildLayers();
+  map.attributionControl.setPrefix(false);
+  const layer=L.layerGroup().addTo(map);
+  let pickCb=null, temp=null, areaRect=null, areaPreview=null, startPoint=null, pointerId=null;
+  let wasDragging=false, wasTouchZoom=false;
+  const container=map.getContainer();
+  const point=e=>map.mouseEventToLatLng(e);
+  const removePreview=()=>{if(areaPreview){areaPreview.remove();areaPreview=null}};
+  const releasePointer=()=>{startPoint=null;pointerId=null;removePreview()};
+  function pointerDown(e){
+    if(!areaDrawing||pickCb||e.button!==0||e.target.closest('.leaflet-control-container'))return;
+    e.preventDefault(); e.stopPropagation();
+    pointerId=e.pointerId; startPoint=point(e);
+    removePreview();
+    areaPreview=L.rectangle(L.latLngBounds(startPoint,startPoint),{color:css('--accent'),weight:2,fillOpacity:.12,interactive:false}).addTo(map);
+  }
+  function pointerMove(e){
+    if(!startPoint||e.pointerId!==pointerId)return;
+    e.preventDefault();
+    areaPreview.setBounds(L.latLngBounds(startPoint,point(e)));
+  }
+  function pointerUp(e){
+    if(!startPoint||e.pointerId!==pointerId)return;
+    e.preventDefault();
+    const end=point(e), start=startPoint;
+    const p0=map.latLngToContainerPoint(start), p1=map.latLngToContainerPoint(end);
+    releasePointer();
+    if(Math.abs(p0.x-p1.x)<8||Math.abs(p0.y-p1.y)<8)return;
+    suppressAreaClick=true; setTimeout(()=>{suppressAreaClick=false},250);
+    finishAreaSelection(L.latLngBounds(start,end));
+  }
+  function pointerCancel(e){if(e.pointerId===pointerId)releasePointer()}
+  container.addEventListener('pointerdown',pointerDown,true);
+  window.addEventListener('pointermove',pointerMove);
+  window.addEventListener('pointerup',pointerUp);
+  window.addEventListener('pointercancel',pointerCancel);
+  let elevationRequest=0;
+  const elevationPopup=L.popup({autoPan:false});
+  map.on('click',async e=>{
+    if(areaDrawing||suppressAreaClick)return;
+    if(pickCb){pickCb(e.latlng.lat,e.latlng.lng);return}
+    if(!map.hasLayer(TILES.topo))return;
+    const request=++elevationRequest;
+    elevationPopup.setLatLng(e.latlng).setContent(T('elevationLoading')).openOn(map);
+    const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),10000);
+    try{
+      const url='https://api.open-meteo.com/v1/elevation?latitude='+encodeURIComponent(e.latlng.lat.toFixed(6))+'&longitude='+encodeURIComponent(e.latlng.lng.toFixed(6));
+      const response=await fetch(url,{signal:controller.signal});
+      if(!response.ok)throw new Error('Elevation HTTP '+response.status);
+      const data=await response.json(), meters=data&&data.elevation&&data.elevation[0];
+      if(!Number.isFinite(meters))throw new Error('No terrain data');
+      if(request===elevationRequest&&map.hasLayer(elevationPopup))elevationPopup.setContent('<b>'+T('elevationValue',Math.round(meters))+'</b>');
+    }catch(err){
+      if(request===elevationRequest&&map.hasLayer(elevationPopup))elevationPopup.setContent(T('elevationError'));
+    }finally{clearTimeout(timer)}
+  });
+  map.on('popupclose',e=>{if(e.popup===elevationPopup)elevationRequest++});
+
+  return {kind:'leaflet',
+    draw(groups){
+      layer.clearLayers();
+      groups.forEach(e=>{
+        const isSel=e.key===selected;
+        const street=map.hasLayer(TILES.road);
+        const m=L.circleMarker([e.lat,e.lon],street
+          ?{radius:radiusOf(e.n),color:isSel?css('--sel'):css('--'+e.prec),weight:isSel?2.5:(e.prec==='gps'?2:1.2),fillColor:css('--'+e.prec),fillOpacity:isSel?.75:.45,bubblingMouseEvents:false}
+          :{radius:radiusOf(e.n),color:isSel?css('--sel'):'#fff',weight:isSel?3:2.2,fillColor:css('--'+e.prec),fillOpacity:isSel?.95:.85,bubblingMouseEvents:false});
+        m.bindTooltip(tipHtml(e),{className:'tt',direction:'top',offset:[0,-4]});
+        m.on('click',()=>{ if(pickCb||areaDrawing||suppressAreaClick) return; selectPlace(e.key); });
+        m.addTo(layer);
+      });
+    },
+    fit(pts,maxZoom){ map.fitBounds(L.latLngBounds(pts).pad(.1),maxZoom?{maxZoom}:{}); },
+    fly(lat,lon,z){ map.flyTo([lat,lon],Math.max(map.getZoom(),z),{duration:.6}); },
+    resize(){ map.invalidateSize(); },
+    relabel(){ buildLayers(); },
+    pick(cb){ pickCb=cb; map.getContainer().classList.toggle('picking',!!cb); },
+    areaMode(on){
+      releasePointer();
+      container.classList.toggle('area-drawing',on);
