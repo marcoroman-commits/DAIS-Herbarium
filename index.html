@@ -731,7 +731,7 @@ it:{
   signIn:'Accedi per modificare', signInT:'Apri la versione per editor', rolePub:'Pubblico',
   roleRW:'Modifica', roleRO:'Sola lettura', roleRWt:'editor del foglio', roleROt:'puoi solo consultare i dati',
   noAccess:'<b>Non hai accesso a questo erbario.</b>', detail:'Dettaglio: ', readFail:m=>'Non riesco a leggere il foglio: '+m,
-  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto!', pinErr:'PIN errato.', pinExit:'Modalità pubblica ripristinata.'
+  pinBtn:'Modalità Editing', pinActive:'Disattiva Editing', pinPrompt:'Inserisci il PIN per abilitare la modifica:', pinSuccess:'PIN corretto! Attendere il caricamento dati', pinErr:'PIN errato.', pinExit:'Ritorno alla modalità pubblica, attendere il caricamento dati...'
 },
 en:{
   locale:'en-GB', htmlLang:'en', otherLang:'IT', otherLangTitle:'Passa all’italiano',
@@ -769,7 +769,7 @@ en:{
   needTaxon:'enter genus and species', needSite:'enter site or GPS', badCoords:'check coordinates', toSave:'To save: ', photoFailAfterSave:(E,row,m)=>'Saved at row '+row+', but photos failed.',
   saved:(E,row,n)=>'Saved at row '+row+(n?' with '+n+' photos':'')+'.', saveFail:'Save failed: ', loading:'Loading data…', readAt:'read at',
   signIn:'Sign in', signInT:'Editor mode', rolePub:'Public', roleRW:'Edit', roleRO:'Read only', roleRWt:'Editor', roleROt:'View only',
-  noAccess:'<b>No access.</b>', detail:'Details: ', readFail:m=>'Cannot read: '+m, pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN!', pinErr:'Incorrect PIN.', pinExit:'Public mode.'
+  noAccess:'<b>No access.</b>', detail:'Details: ', readFail:m=>'Cannot read: '+m, pinBtn:'Editing Mode', pinActive:'Exit Editing', pinPrompt:'Enter PIN:', pinSuccess:'Correct PIN! Wait for data loading...', pinErr:'Incorrect PIN.', pinExit:'Back to public mode, wait for data loading...'
 }};
 let LANG=(function(){ try{ const s=localStorage.getItem('erbario.lang'); if(s==='it'||s==='en') return s; }catch(e){} return /^it/i.test(navigator.language||'it')?'it':'en'; })();
 const T=(k,...a)=>{ const v=(I18N[LANG]&&I18N[LANG][k]!==undefined)?I18N[LANG][k]:I18N.it[k]; return typeof v==='function'?v(...a):v; };
