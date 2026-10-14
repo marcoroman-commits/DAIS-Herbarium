@@ -106,7 +106,7 @@ details.sp summary:hover .bn{color:var(--accent)}
 .bn small{font-style:normal;font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-left:4px}
 .meta{grid-column:1/-1;font-size:12px;color:var(--muted)}
 .box{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--rule);border-radius:3px;padding:0 5px;align-self:start;margin-top:3px;white-space:nowrap}
-dl.label{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0 0 10px;padding:99px 11px;font-size:12.5px;background:var(--paper);border:1px solid var(--rule);border-radius:3px}
+dl.label{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0 0 10px;padding:9px 11px;font-size:12.5px;background:var(--paper);border:1px solid var(--rule);border-radius:3px}
 dl.label dt{color:var(--muted)}dl.label dd{margin:0;overflow-wrap:anywhere}
 .more{justify-self:start}
 .back{justify-self:start}
@@ -893,7 +893,7 @@ function setupControls(){
   fillSelect($('#leg'),[...counts('leg')].sort((a,b)=>b[1]-a[1]),T('all_m'));
   fillSelect($('#box'),[...counts('box')].sort((a,b)=>(+a[0]||0)-(+b[0]||0)),T('all_f'));
   const years=recs.map(r=>r.year).filter(Boolean);
-  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0 || +$('#y1').value!==y1;
+  const y0=YMIN,y1=YMAX, keep=+$('#y0').value!==y0 \vert{}\vert{} +$('#y1').value!==y1;
   YMIN=years.length?Math.min(...years):1900; YMAX=years.length?Math.max(...years):2100;
   if(!keep||!$('#y0').value){ $('#y0').value=YMIN; $('#y1').value=YMAX; }
   $('#y0').min=$('#y1').min=YMIN; $('#y0').max=$('#y1').max=YMAX;
@@ -917,7 +917,7 @@ function finishAreaSelection(bounds){
 function filtered(){
   const terms=norm($('#q').value.trim()).split(/\s+/).filter(Boolean);
   const fam=$('#fam').value, leg=$('#leg').value, box=$('#box').value;
-  const y0=+$('#y0').value || YMIN, y1=+$('#y1').value || YMAX;
+  const y0=+$('#y0').value \vert{}\vert{} YMIN, y1=+$('#y1').value || YMAX;
   const yF=y0>YMIN||y1<YMAX;
   const pOk={gps:$('#p-gps').checked,loc:$('#p-loc').checked,prov:$('#p-prov').checked,stato:$('#p-stato').checked};
   const onlyPh=$('#p-photo').checked;
@@ -1082,10 +1082,39 @@ function renderPanel(list){
 
 function initApp(data){
   LAST_DATA = data;
+  CAN_EDIT = !!data.canEdit;
+  const role = $('#role');
+  if(role){
+    role.hidden = false;
+    role.className = 'role ' + (CAN_EDIT ? 'rw' : 'ro');
+    role.textContent = CAN_EDIT ? T('roleRW') : T('roleRO');
+  }
+  const newRec = $('#newRec');
+  if(newRec) newRec.hidden = !CAN_EDIT;
+  const pinBtn = $('#pinBtn');
+  if(pinBtn){
+    pinBtn.textContent = CAN_EDIT ? T('pinActive') : T('pinBtn');
+    pinBtn.style.background = CAN_EDIT ? 'var(--loc)' : '';
+    pinBtn.style.color = CAN_EDIT ? '#fff' : '';
+  }
+
   parse(data);
   setupControls();
   if(!M) M = leafletEngine();
   update(true);
+}
+
+function loadData(){
+  window.apiCall('getData', { pin: MY_PIN })
+    .then(data => {
+      console.log('Dati ricevuti con successo:', data);
+      initApp(data);
+    })
+    .catch(err => {
+      console.error('Errore nel caricamento:', err);
+      const fatal = $('#fatal');
+      if(fatal){ fatal.hidden = false; fatal.textContent = "Errore di caricamento dati: " + err.message; }
+    });
 }
 
 // Collegamento Eventi
@@ -1111,9 +1140,7 @@ $('#reset').onclick = () => {
   update(true);
 };
 
-$('#reload').onclick = () => {
-  window.apiCall('getData').then(data => initApp(data)).catch(e => alert("Errore ricaricamento: " + e.message));
-};
+$('#reload').onclick = () => loadData();
 
 $('#fitAll').onclick = () => update(true);
 $('#fitVen').onclick = () => mapFitNE();
@@ -1121,19 +1148,19 @@ $('#fitVen').onclick = () => mapFitNE();
 $('#pinBtn').onclick = async () => {
   if (MY_PIN) {
     MY_PIN = '';
-    sessionStorage.removeItem('herbarium_pin');
+    try { sessionStorage.removeItem('herbarium_pin'); } catch(e) {}
     alert(T('pinExit'));
-    location.reload();
+    loadData();
   } else {
     const p = prompt(T('pinPrompt'));
     if (!p) return;
     try {
       const res = await window.apiCall('verifyPin', { pin: p });
-      if (res && res.valid) {
+      if (res && (res.ok || res.valid)) {
         MY_PIN = p;
-        sessionStorage.setItem('herbarium_pin', p);
+        try { sessionStorage.setItem('herbarium_pin', p); } catch(e) {}
         alert(T('pinSuccess'));
-        location.reload();
+        loadData();
       } else {
         alert(T('pinErr'));
       }
@@ -1144,18 +1171,7 @@ $('#pinBtn').onclick = async () => {
 };
 
 // Avvio automatico al caricamento della pagina
-document.addEventListener('DOMContentLoaded', () => {
-  window.apiCall('getData')
-    .then(data => {
-      console.log('Dati ricevuti con successo:', data);
-      initApp(data);
-    })
-    .catch(err => {
-      console.error('Errore nel caricamento:', err);
-      const fatal = $('#fatal');
-      if(fatal){ fatal.hidden = false; fatal.textContent = "Errore di caricamento dati: " + err.message; }
-    });
-});
+document.addEventListener('DOMContentLoaded', loadData);
 
 })();
 </script>
