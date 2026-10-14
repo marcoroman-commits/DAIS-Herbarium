@@ -308,7 +308,13 @@ function run(action, ...args) {
 }
 
 (function(){
-  let MY_PIN = (function(){ try { return sessionStorage.getItem('herbarium_pin') || ''; } catch(e) { return ''; } })();
+  var MY_PIN = (function(){ try { return sessionStorage.getItem('herbarium_pin') || ''; } catch(e) { return ''; } })();
+  var recs = [];
+  var current = [];
+  var selected = null, listLimit = 200, openRow = null, mode = 'browse';
+  var areaBounds = null, areaDrawing = false, suppressAreaClick = false;
+  var M = null, lastGroups = [], currentBaseLayer = 'road';
+
 const GAZ=[
   ["ca.? foscari a san giobbe", 45.444, 12.3217, "Venezia, San Giobbe"],
   ["ca.? foscari a santa marta", 45.4325, 12.315, "Venezia, Santa Marta"],
@@ -764,7 +770,6 @@ function applyStatic(){
 }
 applyStatic();
 
-const recs = [];
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css = n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -853,8 +858,7 @@ function setupControls(){
   if(!keep||!$('#y0').value){ $('#y0').value=YMIN; $('#y1').value=YMAX; }
   $('#y0').min=$('#y1').min=YMIN; $('#y0').max=$('#y1').max=YMAX;
 }
-let selected=null, listLimit=200, openRow=null, mode='browse';
-let areaBounds=null, areaDrawing=false, suppressAreaClick=false;
+
 function refreshAreaControls(){
   $('#areaSelect').textContent=T(areaDrawing?'areaCancel':'areaSelect');
   $('#areaSelect').setAttribute('aria-pressed',String(areaDrawing));
@@ -891,7 +895,6 @@ function filtered(){
 
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 const NE_PTS=[[44.9,10.2],[46.8,13.9]];
-let M=null, lastGroups=[], currentBaseLayer='road';
 const radiusOf=n=>3.5+Math.sqrt(n)*2.0;
 const tipHtml=e=>'<div><b>'+esc(e.place)+'</b><br>'+fmt(e.n)+' '+T('specimens')+' · '+e.species.size+' '+T('species')+(e.ph?' · '+e.ph+' '+T('withPhoto'):'')+'</div>';
 function groupsFrom(list){
@@ -922,7 +925,7 @@ function leafletEngine(){
     if (e.layer === TILES.road) currentBaseLayer = 'road';
     else if (e.layer === TILES.topo) currentBaseLayer = 'topo';
     else if (e.layer === TILES.sat) currentBaseLayer = 'sat';
-    if (typeof current !== 'undefined' && current) drawPoints(current);
+    if (Array.isArray(current) && current.length) drawPoints(current);
   });
 
   let layerCtl=null;
@@ -1092,7 +1095,6 @@ function selectPlace(key,fly){
   if(fly){const g=lastGroups.find(x=>x.key===key); if(g) mapFly(g.lat,g.lon,10);}
   $('#panel').scrollTop=0;
 }
-let current=[];
 function update(fit){
   current=filtered(); drawPoints(current); renderPanel(current);
   if(fit&&lastGroups.length) mapFit(lastGroups.map(g=>[g.lat,g.lon]),11);
