@@ -41,7 +41,10 @@
 html,body{height:100%;margin:0}
 .mono{font-family:var(--mono)}
 #src{font-size:11.5px;color:var(--muted)}
+.basemap-topo{filter:brightness(1.06) contrast(.82) opacity(.54);mix-blend-mode:multiply}
+.basemap-sat{filter:brightness(1.14) contrast(.80)}
 #map.relief-active{background:#DEE8D7}
+.contour-notice{position:absolute;left:12px;bottom:108px;z-index:450;padding:6px 9px;background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:3px;font-size:12px;pointer-events:none;max-width:230px}
 .leaflet-control-layers{background:var(--surface)!important;color:var(--ink)!important;border:1px solid var(--rule)!important;box-shadow:0 2px 6px rgba(0,0,0,0.15)!important;font-size:12.5px!important;border-radius:4px!important}
 .leaflet-control-layers-toggle{background-image:none!important;width:auto!important;height:auto!important;padding:5px 10px!important;font-size:12.5px!important;font-weight:400!important;color:var(--ink)!important;text-decoration:none!important;display:flex!important;align-items:center!important;white-space:nowrap!important}
 .leaflet-control-layers-toggle::after{content:attr(data-label)}
@@ -241,6 +244,7 @@ header.top button{white-space:nowrap;flex:none}
     <div class="mapwrap">
       <div id="map" role="region" data-i18n-aria="mapAria" aria-label="Mappa dei siti di raccolta"></div>
       <div class="mapbtns"><button type="button" id="fitAll" data-i18n="fitAll">Tutti i punti</button><button type="button" id="fitVen" data-i18n="fitNE">Nord-Est</button><button type="button" id="areaSelect" data-i18n="areaSelect" aria-pressed="false">Seleziona area</button><button type="button" id="areaClear" data-i18n="areaClear" hidden>Rimuovi area</button></div>
+      <div id="contourNotice" class="contour-notice" role="status" hidden></div>
       <div class="legend">
         <div class="i"><span class="dot" style="background:var(--gps)"></span><span data-i18n="lgGps">Posizione GPS</span></div>
         <div class="i"><span class="dot" style="background:var(--loc)"></span><span data-i18n="lgLoc">Località riconosciuta</span></div>
@@ -255,6 +259,8 @@ header.top button{white-space:nowrap;flex:none}
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
+<script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
 <script>
 window.addEventListener('error',function(e){var b=document.getElementById('fatal');if(!b)return;b.hidden=false;b.textContent='Errore nella pagina: '+(e.message||'risorsa non caricata')+(e.filename?' ('+e.filename.split('/').pop()+':'+e.lineno+')':'');});
 if(!window.L){document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('fatal');if(b){b.hidden=false;b.textContent='La libreria della mappa (Leaflet) non si è caricata: controlla la connessione.';}});}
@@ -313,7 +319,7 @@ function run(action, ...args) {
   var current = [];
   var selected = null, listLimit = 200, openRow = null, mode = 'browse';
   var areaBounds = null, areaDrawing = false, suppressAreaClick = false;
-  var M = null, lastGroups = [], currentBaseLayer = 'road';
+  var M = null, lastGroups = [];
 
 const GAZ=[
   ["ca.? foscari a san giobbe", 45.444, 12.3217, "Venezia, San Giobbe"],
@@ -682,7 +688,7 @@ it:{
   mapAria:'Mappa dei siti di raccolta', fitAll:'Tutti i punti', fitNE:'Nord-Est', layers:'Sfondo',
   areaSelect:'Seleziona area', areaCancel:'Annulla selezione', areaClear:'Rimuovi area', areaHint:'Trascina sulla mappa per delimitare l’area.',
   lgGps:'Posizione GPS', lgLoc:'Località riconosciuta', lgProv:'Centro della provincia', lgStato:'Centro dello Stato', lgSize:'Area del cerchio ∝ numero di campioni',
-  baseRoad:'Stradale (OpenStreetMap)', baseTopo:'Rilievo e isoipse (OpenTopoMap)', baseSat:'Satellite (Esri)',
+  baseRoad:'Stradale (OpenStreetMap)', baseTopo:'Rilievo e isoipse (Esri)', contoursZoom:'Ingrandisci la mappa per vedere le isoipse (da zoom 11).', contoursUnavailable:'Isoipse non disponibili: controlla la connessione. Il rilievo resta visibile.', terrainUnavailable:'Colori altimetrici non disponibili: controlla la connessione.', elevationLoading:'Carico la quota stimata…', elevationValue:n=>'Quota del terreno stimata: '+n+' m', elevationSource:'Modello Copernicus GLO-90 (90 m), via Open-Meteo; quota approssimativa del punto, non misurata sul campione.', elevationError:'Quota non disponibile per questo punto. Riprova più tardi.', baseSat:'Satellite (Esri)',
   all_f:'Tutte', all_m:'Tutti',
   precNote:{gps:'Posizione registrata con GPS al momento della raccolta.',loc:'Posizione della località indicata sul cartellino (approssimata).',prov:'Località non riconosciuta: il punto è al centro della provincia. Puoi correggerla nel foglio "Luoghi".',stato:'Località e provincia assenti: il punto è al centro dello Stato. Puoi correggerla nel foglio "Luoghi".'},
   gpsPlace:'Posizione GPS', provinceOf:'Provincia di ',
@@ -732,7 +738,7 @@ en:{
   mapAria:'Map of collection sites', fitAll:'All points', fitNE:'North-East Italy', layers:'Base map',
   areaSelect:'Select area', areaCancel:'Cancel selection', areaClear:'Clear area', areaHint:'Drag on the map to draw an area.',
   lgGps:'GPS position', lgLoc:'Recognised locality', lgProv:'Province centre', lgStato:'Country centre', lgSize:'Circle area ∝ number of specimens',
-  baseRoad:'Streets (OpenStreetMap)', baseTopo:'Relief and contours (OpenTopoMap)', baseSat:'Satellite (Esri)',
+  baseRoad:'Streets (OpenStreetMap)', baseTopo:'Relief and contours (Esri)', contoursZoom:'Zoom in to see contour lines (zoom 11 or higher).', contoursUnavailable:'Contours unavailable: check your connection.', terrainUnavailable:'Elevation colours unavailable: check your connection.', elevationLoading:'Loading estimated elevation…', elevationValue:n=>'Estimated terrain elevation: '+n+' m', elevationSource:'Copernicus GLO-90 DEM (90 m), via Open-Meteo.', elevationError:'Elevation unavailable at this point.', baseSat:'Satellite (Esri)',
   all_f:'All', all_m:'All',
   precNote:{gps:'Position recorded by GPS.',loc:'Position written on label.',prov:'Province centre.',stato:'Country centre.'},
   gpsPlace:'GPS position', provinceOf:'Province of ',
@@ -895,7 +901,7 @@ function filtered(){
 
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 const NE_PTS=[[44.9,10.2],[46.8,13.9]];
-const radiusOf=n=>3.5+Math.sqrt(n)*2.0;
+const radiusOf=n=>3.2+Math.sqrt(n)*1.9;
 const tipHtml=e=>'<div><b>'+esc(e.place)+'</b><br>'+fmt(e.n)+' '+T('specimens')+' · '+e.species.size+' '+T('species')+(e.ph?' · '+e.ph+' '+T('withPhoto'):'')+'</div>';
 function groupsFrom(list){
   const g=new Map();
@@ -909,24 +915,135 @@ function mapFly(lat,lon,z){ if(M) M.fly(lat,lon,z); }
 
 function leafletEngine(){
   const map=L.map('map',{preferCanvas:true,minZoom:3,maxZoom:19});
-  
-  const OSM_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
-  const TOPO_ATTR='Mappa &copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC-BY-SA</a>) · Dati &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
-  const ESRI_SAT_ATTR='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+  const OSM_ATTR='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>';
+  const ESRI_IMAGERY_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> · Sources: Esri, Vantor, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community';
+  const ESRI_HILLSHADE_ATTR='Powered by <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> · Sources: Esri, Vantor, Airbus DS, USGS, NGA, NASA, CGIAR, N Robinson, NCEAS, NLS, OS, NMA, Geodatastyrelsen, Rijkswaterstaat, GSA, Geoland, FEMA, Intermap, and the GIS User Community';
+
+  const terrainStops=[[-500,[154,187,202]],[-1,[181,209,216]],[0,[202,215,203]],[100,[198,215,180]],[300,[176,204,159]],[700,[197,207,160]],[1400,[210,194,159]],[2400,[199,171,157]],[4000,[215,203,194]],[8000,[238,232,223]]];
+  const colorTable=new Uint8Array(65536*3);
+  for(let index=0;index<65536;index++){
+    const h=index-1000; let upper=1;
+    while(upper<terrainStops.length-1&&h>terrainStops[upper][0])upper++;
+    const lower=upper-1, a=terrainStops[lower], b=terrainStops[upper];
+    const f=Math.max(0,Math.min(1,(h-a[0])/(b[0]-a[0])));
+    for(let k=0;k<3;k++)colorTable[index*3+k]=Math.round(a[1][k]+(b[1][k]-a[1][k])*f);
+  }
+
+  const coloredTiles=new Map(), tileCacheLimit=64, sourceImages=new Map(), sourceCacheLimit=48;
+  const sourceUrl=coords=>'https://elevation-tiles-prod.s3.amazonaws.com/terrarium/'+coords.z+'/'+coords.x+'/'+coords.y+'.png';
+  function sourceImage(key,coords){
+    if(sourceImages.has(key)){
+      const image=sourceImages.get(key);
+      sourceImages.delete(key);sourceImages.set(key,image);
+      return image;
+    }
+    const image=new Image();image.crossOrigin='anonymous';
+    sourceImages.set(key,image);
+    if(sourceImages.size>sourceCacheLimit)sourceImages.delete(sourceImages.keys().next().value);
+    image.src=sourceUrl(coords);
+    return image;
+  }
+  const TerrainColors=L.GridLayer.extend({
+    createTile(coords,done){
+      const tile=document.createElement('canvas');tile.width=tile.height=256;
+      const key=coords.z+'/'+coords.x+'/'+coords.y;
+      if(coloredTiles.has(key)){
+        const previous=coloredTiles.get(key);
+        coloredTiles.delete(key);coloredTiles.set(key,previous);
+        tile.getContext('2d').drawImage(previous,0,0);
+        setTimeout(()=>done(null,tile),0);
+        return tile;
+      }
+      const img=sourceImage(key,coords);
+      let finished=false;
+      const render=()=>{
+        if(finished)return;
+        finished=true;
+        try{
+          const ctx=tile.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,256,256);
+          const image=ctx.getImageData(0,0,256,256), rgba=image.data;
+          for(let i=0;i<rgba.length;i+=4){
+            const h=rgba[i]*256+rgba[i+1]+rgba[i+2]/256-32768;
+            const c=3*Math.max(0,Math.min(65535,Math.round(h+1000)));
+            rgba[i]=colorTable[c];rgba[i+1]=colorTable[c+1];rgba[i+2]=colorTable[c+2];rgba[i+3]=255;
+          }
+          ctx.putImageData(image,0,0);
+          coloredTiles.set(key,tile);
+          if(coloredTiles.size>tileCacheLimit)coloredTiles.delete(coloredTiles.keys().next().value);
+          done(null,tile);
+        }catch(error){done(error,tile)}
+      };
+      const fail=()=>{if(!finished){finished=true;done(new Error('Terrain tile unavailable'),tile)}};
+      if(img.complete){
+        if(img.naturalWidth)setTimeout(render,0);else setTimeout(fail,0);
+      }else{
+        img.addEventListener('load',render,{once:true});
+        img.addEventListener('error',fail,{once:true});
+      }
+      return tile;
+    }
+  });
+
+  const terrainColors=new TerrainColors({maxZoom:19,maxNativeZoom:11,zIndex:1,attribution:'Elevation: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Mapzen Terrain Tiles</a> · Europe: Copernicus / EU-DEM · <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md" target="_blank" rel="noopener">all terrain data sources</a> · relief colours adapted'});
+  const relief=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:16,zIndex:2,className:'basemap-topo',attribution:ESRI_HILLSHADE_ATTR});
+  const contoursAvailable=!!(L.esri&&L.esri.Vector&&L.esri.Vector.vectorTileLayer);
+  const contourPane=map.createPane('contourPane'); contourPane.style.zIndex='350'; contourPane.style.pointerEvents='none';
+  const contours=contoursAvailable?L.esri.Vector.vectorTileLayer('51ca3ce6a16d4080ad955dacd6dd2fe2',{pane:'contourPane',style:style=>{style.layers=style.layers.filter(item=>item.type==='line'||item.type==='symbol');return style}}):null;
+  const topo=L.layerGroup(contours?[terrainColors,relief,contours]:[terrainColors,relief]);
 
   const TILES={
     road:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:OSM_ATTR}),
-    topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,subdomains:'abc',attribution:TOPO_ATTR}),
-    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:ESRI_SAT_ATTR})
+    topo,
+    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,className:'basemap-sat',attribution:ESRI_IMAGERY_ATTR})
   };
   TILES.road.addTo(map);
 
-  map.on('baselayerchange', function(e){
-    if (e.layer === TILES.road) currentBaseLayer = 'road';
-    else if (e.layer === TILES.topo) currentBaseLayer = 'topo';
-    else if (e.layer === TILES.sat) currentBaseLayer = 'sat';
-    if (Array.isArray(current) && current.length) drawPoints(current);
+  let warmTimer=null, warmGeneration=0;
+  function warmVisibleTerrain(){
+    const generation=++warmGeneration;
+    if(map.hasLayer(topo))return;
+    const z=Math.min(Math.round(map.getZoom()),11), bounds=map.getBounds();
+    const nw=map.project(bounds.getNorthWest(),z), se=map.project(bounds.getSouthEast(),z);
+    const center=map.project(map.getCenter(),z), tiles=[];
+    const limit=2**z;
+    for(let y=Math.max(0,Math.floor(nw.y/256));y<=Math.min(limit-1,Math.floor(se.y/256));y++){
+      for(let x=Math.max(0,Math.floor(nw.x/256));x<=Math.min(limit-1,Math.floor(se.x/256));x++){
+        const key=z+'/'+x+'/'+y;
+        if(!sourceImages.has(key)&&!coloredTiles.has(key))tiles.push({key,z,x,y,d:(x+.5-center.x/256)**2+(y+.5-center.y/256)**2});
+      }
+    }
+    tiles.sort((a,b)=>a.d-b.d);
+    const queue=tiles.slice(0,12);let next=0;
+    function loadNext(){
+      if(generation!==warmGeneration||map.hasLayer(topo))return;
+      const coords=queue[next++];if(!coords)return;
+      const image=sourceImage(coords.key,coords);
+      if(image.complete){loadNext();return}
+      image.addEventListener('load',loadNext,{once:true});
+      image.addEventListener('error',loadNext,{once:true});
+    }
+    for(let i=0;i<Math.min(3,queue.length);i++)loadNext();
+  }
+  map.on('moveend',()=>{
+    clearTimeout(warmTimer);
+    warmTimer=setTimeout(warmVisibleTerrain,700);
   });
+  warmTimer=setTimeout(warmVisibleTerrain,1200);
+
+  const contourNotice=$('#contourNotice');
+  let contourFailure=!contoursAvailable, terrainFailure=false;
+  function updateContourNotice(){
+    const active=map.hasLayer(topo), message=!active?'':terrainFailure?T('terrainUnavailable'):contourFailure?T('contoursUnavailable'):map.getZoom()<11?T('contoursZoom'):'';
+    contourNotice.textContent=message; contourNotice.hidden=!message;
+  }
+  if(contours) contours.on('error',()=>{contourFailure=true;updateContourNotice()});
+  terrainColors.on('tileerror',()=>{terrainFailure=true;updateContourNotice()});
+  map.on('baselayerchange zoomend',updateContourNotice);
+  map.on('baselayerchange',()=>{
+    map.getContainer().classList.toggle('relief-active',map.hasLayer(topo));
+    if(Array.isArray(current) && current.length) drawPoints(current);
+  });
+  updateContourNotice();
 
   let layerCtl=null;
   const buildLayers=()=>{
@@ -939,50 +1056,72 @@ function leafletEngine(){
   buildLayers();
   map.attributionControl.setPrefix(false);
   const layer=L.layerGroup().addTo(map);
-  let pickCb=null, temp=null, areaRect=null;
-  let areaStart=null, areaBox=null;
 
-  function onMouseDown(e){
-    if(!areaDrawing) return;
-    areaStart=e.latlng;
-    if(areaBox){ areaBox.remove(); areaBox=null; }
-    L.DomEvent.stopPropagation(e);
+  let pickCb=null, temp=null, areaRect=null, areaPreview=null, startPoint=null, pointerId=null;
+  let wasDragging=false, wasTouchZoom=false;
+  const container=map.getContainer();
+  const point=e=>map.mouseEventToLatLng(e);
+  const removePreview=()=>{if(areaPreview){areaPreview.remove();areaPreview=null}};
+  const releasePointer=()=>{startPoint=null;pointerId=null;removePreview()};
+  function pointerDown(e){
+    if(!areaDrawing||pickCb||e.button!==0||e.target.closest('.leaflet-control-container'))return;
+    e.preventDefault(); e.stopPropagation();
+    pointerId=e.pointerId; startPoint=point(e);
+    removePreview();
+    areaPreview=L.rectangle(L.latLngBounds(startPoint,startPoint),{color:css('--accent'),weight:2,fillOpacity:.12,interactive:false}).addTo(map);
   }
-  function onMouseMove(e){
-    if(!areaDrawing || !areaStart) return;
-    const bounds=L.latLngBounds(areaStart, e.latlng);
-    if(!areaBox){
-      areaBox=L.rectangle(bounds,{color:css('--accent'),weight:2,fillOpacity:.15,interactive:false}).addTo(map);
-    } else {
-      areaBox.setBounds(bounds);
-    }
+  function pointerMove(e){
+    if(!startPoint||e.pointerId!==pointerId)return;
+    e.preventDefault();
+    areaPreview.setBounds(L.latLngBounds(startPoint,point(e)));
   }
-  function onMouseUp(e){
-    if(!areaDrawing || !areaStart) return;
-    const bounds=L.latLngBounds(areaStart, e.latlng);
-    areaStart=null;
-    if(areaBox){ areaBox.remove(); areaBox=null; }
-    if(bounds.getNorthEast().equals(bounds.getSouthWest())){ return; }
-    finishAreaSelection(bounds);
+  function pointerUp(e){
+    if(!startPoint||e.pointerId!==pointerId)return;
+    e.preventDefault();
+    const end=point(e), start=startPoint;
+    const p0=map.latLngToContainerPoint(start), p1=map.latLngToContainerPoint(end);
+    releasePointer();
+    if(Math.abs(p0.x-p1.x)<8||Math.abs(p0.y-p1.y)<8)return;
+    suppressAreaClick=true; setTimeout(()=>{suppressAreaClick=false},250);
+    finishAreaSelection(L.latLngBounds(start,end));
   }
+  function pointerCancel(e){if(e.pointerId===pointerId)releasePointer()}
+  container.addEventListener('pointerdown',pointerDown,true);
+  window.addEventListener('pointermove',pointerMove);
+  window.addEventListener('pointerup',pointerUp);
+  window.addEventListener('pointercancel',pointerCancel);
+
+  let elevationRequest=0;
+  const elevationPopup=L.popup({autoPan:false});
+  map.on('click',async e=>{
+    if(areaDrawing||suppressAreaClick)return;
+    if(pickCb){pickCb(e.latlng.lat,e.latlng.lng);return}
+    if(!map.hasLayer(TILES.topo))return;
+    const request=++elevationRequest;
+    elevationPopup.setLatLng(e.latlng).setContent(T('elevationLoading')).openOn(map);
+    const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),10000);
+    try{
+      const url='https://api.open-meteo.com/v1/elevation?latitude='+encodeURIComponent(e.latlng.lat.toFixed(6))+'&longitude='+encodeURIComponent(e.latlng.lng.toFixed(6));
+      const response=await fetch(url,{signal:controller.signal});
+      if(!response.ok)throw new Error('Elevation HTTP '+response.status);
+      const data=await response.json(), meters=data&&data.elevation&&data.elevation[0];
+      if(!Number.isFinite(meters))throw new Error('No terrain data');
+      if(request===elevationRequest&&map.hasLayer(elevationPopup))elevationPopup.setContent('<b>'+T('elevationValue',Math.round(meters))+'</b><br><small>'+T('elevationSource')+' <a href="https://open-meteo.com/en/docs/elevation-api" target="_blank" rel="noopener">Open-Meteo</a> · <a href="https://dataspace.copernicus.eu/" target="_blank" rel="noopener">Copernicus</a></small>');
+    }catch(err){
+      if(request===elevationRequest&&map.hasLayer(elevationPopup))elevationPopup.setContent(T('elevationError'));
+    }finally{clearTimeout(timer)}
+  });
+  map.on('popupclose',e=>{if(e.popup===elevationPopup)elevationRequest++});
 
   return {kind:'leaflet',
     draw(groups){
       layer.clearLayers();
-      const needsWhiteBorder = (currentBaseLayer === 'topo' || currentBaseLayer === 'sat');
       groups.forEach(e=>{
         const isSel=e.key===selected;
-        const strokeColor = isSel ? '#0A3F51' : (needsWhiteBorder ? '#FFFFFF' : '#0A3F51');
-        const strokeWeight = isSel ? 3.5 : (needsWhiteBorder ? 2 : 1.5);
-        const m=L.circleMarker([e.lat,e.lon], {
-          radius:radiusOf(e.n),
-          color:strokeColor,
-          weight:strokeWeight,
-          opacity:1,
-          fillColor:css('--'+e.prec),
-          fillOpacity:isSel?.9:.8,
-          bubblingMouseEvents:false
-        });
+        const street=map.hasLayer(TILES.road);
+        const m=L.circleMarker([e.lat,e.lon],street
+          ?{radius:radiusOf(e.n),color:isSel?css('--sel'):css('--'+e.prec),weight:isSel?2.5:(e.prec==='gps'?2:1.2),fillColor:css('--'+e.prec),fillOpacity:isSel?.75:.45,bubblingMouseEvents:false}
+          :{radius:radiusOf(e.n),color:isSel?css('--sel'):'#fff',weight:isSel?3:2.2,fillColor:css('--'+e.prec),fillOpacity:isSel?.95:.85,bubblingMouseEvents:false});
         m.bindTooltip(tipHtml(e),{className:'tt',direction:'top',offset:[0,-4]});
         m.on('click',()=>{ if(pickCb||areaDrawing||suppressAreaClick) return; selectPlace(e.key); });
         m.addTo(layer);
@@ -994,20 +1133,10 @@ function leafletEngine(){
     relabel(){ buildLayers(); },
     pick(cb){ pickCb=cb; map.getContainer().classList.toggle('picking',!!cb); },
     areaMode(on){
-      map.getContainer().classList.toggle('area-drawing',on);
-      if(on){
-        map.dragging.disable();
-        map.on('mousedown', onMouseDown);
-        map.on('mousemove', onMouseMove);
-        map.on('mouseup', onMouseUp);
-      } else {
-        map.dragging.enable();
-        map.off('mousedown', onMouseDown);
-        map.off('mousemove', onMouseMove);
-        map.off('mouseup', onMouseUp);
-        areaStart=null;
-        if(areaBox){ areaBox.remove(); areaBox=null; }
-      }
+      releasePointer();
+      container.classList.toggle('area-drawing',on);
+      if(on){wasDragging=map.dragging.enabled();wasTouchZoom=map.touchZoom.enabled();map.dragging.disable();map.touchZoom.disable()}
+      else{if(wasDragging)map.dragging.enable();if(wasTouchZoom)map.touchZoom.enable()}
     },
     showArea(bounds){
       if(areaRect){areaRect.remove();areaRect=null}
@@ -1016,7 +1145,7 @@ function leafletEngine(){
     temp(lat,lon){
       if(temp){temp.remove();temp=null}
       if(lat==null) return;
-      temp=L.circleMarker([lat,lon],{radius:9,color:'#FFFFFF',weight:3,dashArray:'3 3',fillColor:css('--gps'),fillOpacity:.5,interactive:false}).addTo(map);
+      temp=L.circleMarker([lat,lon],{radius:9,color:css('--gps'),weight:3,dashArray:'3 3',fillColor:css('--gps'),fillOpacity:.25,interactive:false}).addTo(map);
     }
   };
 }
