@@ -1020,7 +1020,7 @@ function parse(data){
     const gpsTxt=[get(r,c.gpsLat),get(r,c.gpsLon)].filter(s=>s&&num(s)==null);
     const g=geocode(site,prov,st,data.places||[],gLat,gLon);
     const note = noteCols.map(k=>get(r,k)).concat(gpsTxt).filter(Boolean).join(' · ');
-    const rec={i,row:(data.rowNums&&data.rowNums[i])||i+2,id:get(r,c.id),box:get(r,c.box),fam:get(r,c.fam),gen,sp,name,aut:get(r,c.aut),site,prov,st,date,iso,year:ym?+ym[1]:null,
+    const rec={i,row:(data.rowNums&&data.rowNums[i])||i+2,rowKnown:!!(data.rowNums&&data.rowNums[i]),id:get(r,c.id),box:get(r,c.box),fam:get(r,c.fam),gen,sp,name,aut:get(r,c.aut),site,prov,st,date,iso,year:ym?+ym[1]:null,
       leg:get(r,c.leg),det:get(r,c.det),note,lat:g.lat,lon:g.lon,place:g.place,prec:g.prec,
       gpsLat:gLat,gpsLon:gLon,gpsAcc:num(get(r,c.gpsAcc)),photos:parsePhotos(get(r,c.photos)),insBy:get(r,c.insBy),insAt:get(r,c.insAt),modBy:get(r,c.modBy),modAt:get(r,c.modAt)};
     rec.key=g.prec==='gps' ? rec.lat.toFixed(5)+','+rec.lon.toFixed(5) : rec.lat+','+rec.lon;
@@ -1382,7 +1382,7 @@ function specRow(r){
     ${r.note?`<dt>${T('lNote')}</dt><dd>${esc(r.note)}</dd>`:''}
     ${r.insBy?`<dt>${T('lIns')}</dt><dd>${esc(r.insBy)}${r.insAt?', '+esc(r.insAt):''}</dd>`:''}
     ${r.modBy?`<dt>${T('lMod')}</dt><dd>${esc(r.modBy)}${r.modAt?', '+esc(r.modAt):''}</dd>`:''}
-    <dt>${T('lRow')}</dt><dd class="mono">${r.row}</dd>
+    ${r.rowKnown?`<dt>${T('lRow')}</dt><dd class="mono">${r.row}</dd>`:''}
   </dl>
 <div class="sp-actions">
   <button type="button" data-act="search" data-row="${r.row}">
@@ -1676,7 +1676,8 @@ function load(){
 
 function renderStatus(){
   const data=LAST_DATA; if(!data) return;
-  $('#src').textContent=data.spreadsheetName+' › '+data.sheetName+' · '+T('readAt')+' '+new Date(data.updated).toLocaleTimeString(T('locale'),{hour:'2-digit',minute:'2-digit'});
+  const lbl=T('readAt');
+  $('#src').textContent=lbl.charAt(0).toUpperCase()+lbl.slice(1)+' '+new Date(data.updated).toLocaleTimeString(T('locale'),{hour:'2-digit',minute:'2-digit'});
 }
 
 function setLang(l){
